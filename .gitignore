@@ -1,0 +1,17 @@
+# Dependencies
+/.deps
+/.distfiles
+
+# Build Output
+/x86
+/amd64
+/arm
+/arm64
+
+# Misc
+/sign.bat
+*.swp
+*.bak
+*.syso
+.idea
+*.ico

@@ -4,10 +4,10 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 
 ## Phase 0 — Baseline
 
-- [ ] Import the tunnel foundation while preserving all required upstream notices and licensing.
-- [ ] Build the untouched Windows baseline successfully.
+- [x] Import the tunnel foundation while preserving all required upstream notices and licensing.
+- [x] Build the untouched Windows baseline successfully.
 - [ ] Confirm tunnel import, connect, disconnect, handshake, and traffic behavior.
-- [ ] Document a reproducible build procedure.
+- [x] Document a reproducible build procedure.
 - [ ] Establish TunnelMint development branding so test builds are clearly identifiable.
 
 **Exit criteria:** A reproducible TunnelMint development build behaves correctly before any new networking behavior is introduced.
