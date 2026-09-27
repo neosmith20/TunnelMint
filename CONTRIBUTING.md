@@ -4,25 +4,25 @@ Thanks for helping improve TunnelMint.
 
 TunnelMint is intentionally focused on a small, reliable user experience. Contributions should follow the project's KISS principle: solve the problem with the smallest safe change that preserves compatibility and security.
 
-## Licensing and contribution ownership
+## Licensing and contribution policy
 
 TunnelMint is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE).
 
-- **Bug reports, feature suggestions, logs, testing results, and general feedback** may be submitted freely without transferring ownership.
-- **Code, documentation, artwork, tests, or any other copyrightable contribution** will not be merged until the contributor has explicitly accepted the [Contributor Copyright Assignment](CONTRIBUTOR_COPYRIGHT_ASSIGNMENT.md).
-- Opening a pull request, issue, or other submission by itself is **not** treated as a copyright assignment.
-- The assignment must be accepted through a designated signed or electronic acceptance process before the contribution is merged.
-- Once accepted, copyright ownership in the covered Contribution is transferred to the TunnelMint Project Owner as described in the assignment agreement.
-- If a Contribution may be owned in whole or in part by an employer or another entity, the contributor must disclose that before merge. Authorization from that entity may be required.
-- TunnelMint may decline any contribution whose ownership, provenance, licensing, or third-party rights are unclear.
+- **Bug reports, feature suggestions, logs, testing results, and general feedback** may be submitted freely without accepting the Contributor License Agreement.
+- **Code, documentation, artwork, tests, or any other copyrightable contribution** intended for inclusion in TunnelMint requires acceptance of the [Contributor License Agreement](CONTRIBUTOR_LICENSE_AGREEMENT.md) ("CLA").
+- Contributors retain copyright in their original Contributions, but the CLA grants the TunnelMint Project Owner permanent, worldwide, irrevocable rights to use, modify, distribute, sublicense, relicense, and commercially use those Contributions.
+- Those rights include use in free, source-available, proprietary, paid, hosted, bundled, appliance, enterprise, or other current or future TunnelMint offerings.
+- A contributor is not entitled to royalties, ownership in TunnelMint, or other compensation solely because a Contribution is used.
+- If a Contribution may be owned in whole or in part by an employer, client, school, or another entity, the contributor must disclose that before merge. Authorization from that entity may be required.
+- TunnelMint may decline any Contribution whose ownership, provenance, licensing, or third-party rights are unclear.
 
-Until an acceptance workflow is published, external contributors are welcome to open issues, submit testing results, suggest changes, and discuss implementation, but copyrightable contributions intended for merge should not be merged.
+For GitHub pull requests, the CLA may be accepted electronically using the acknowledgement in the project's pull request template. Maintainers must not merge an external copyrightable Contribution until the required acceptance has been recorded.
 
 ## Before Contributing
 
 Please:
 
-1. Read `README.md`, `AGENTS.md`, `ROADMAP.md`, `SECURITY.md`, `LICENSE`, and `CONTRIBUTOR_COPYRIGHT_ASSIGNMENT.md`.
+1. Read `README.md`, `AGENTS.md`, `ROADMAP.md`, `SECURITY.md`, `LICENSE`, and `CONTRIBUTOR_LICENSE_AGREEMENT.md`.
 2. Search existing issues and pull requests before starting duplicate work.
 3. For anything beyond a small fix, open an issue first to discuss the approach.
 4. Keep changes focused. Large unrelated refactors should be discussed before implementation.
