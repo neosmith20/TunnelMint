@@ -2,7 +2,9 @@
 
 ## Project Goal
 
-TunnelMint is a simple, user-friendly VPN client built around WireGuard. The first target is Windows. Android is planned only after the Windows implementation is stable and polished.
+TunnelMint is a simple, user-friendly VPN client. The first target is Windows. Android is planned only after the Windows implementation is stable and polished.
+
+TunnelMint uses WireGuard as the underlying tunnel technology. Everything else in this document refers to TunnelMint itself.
 
 The project follows one rule above all others: **KISS — Keep It Simple.**
 
@@ -10,7 +12,7 @@ Do not add complexity unless it is required for correctness, security, compatibi
 
 ## Core Behavior
 
-TunnelMint must preserve normal WireGuard behavior for ordinary configurations.
+TunnelMint must preserve ordinary tunnel behavior for standard configurations.
 
 Examples:
 
@@ -28,9 +30,9 @@ Must be recognized as DNS-over-HTTPS (DoH).
 
 For DoH:
 
-1. Bring up the WireGuard tunnel.
+1. Bring up the tunnel.
 2. Automatically bootstrap the DoH hostname when needed.
-3. Establish the DoH connection through the WireGuard tunnel.
+3. Establish the DoH connection through the active tunnel.
 4. Use the DoH endpoint for DNS queries.
 5. Do not silently fall back to plain DNS if encrypted DNS fails.
 6. Restore networking state cleanly when the tunnel stops.
@@ -39,22 +41,22 @@ Bootstrap resolvers must have sensible built-in defaults and be configurable fro
 
 ## Product Principles
 
-- Preserve compatibility with normal WireGuard tunnel configurations whenever possible.
-- Do not change the WireGuard protocol.
-- Do not reimplement WireGuard cryptography.
-- Reuse the proven WireGuard Windows implementation and platform integration where appropriate.
-- Keep encrypted DNS and related additions outside the WireGuard protocol itself.
-- Prefer automatic behavior with safe defaults over exposing unnecessary configuration.
+- Preserve compatibility with standard tunnel configurations whenever possible.
+- Do not change the underlying tunnel protocol.
+- Do not reimplement tunnel cryptography.
+- Reuse proven tunnel and platform integration code where appropriate.
+- Keep encrypted DNS and related additions outside the tunnel protocol itself.
+- Prefer automatic behavior with safe defaults over unnecessary configuration.
 - Keep the UI simple and familiar, but make TunnelMint visually and functionally its own application.
 - Avoid unnecessary dependencies.
 - Avoid unnecessary background services, frameworks, runtimes, and telemetry.
-- Never add tracking, analytics, advertising, or account requirements unless explicitly approved by the project owner.
+- Never add tracking, analytics, advertising, or account requirements unless explicitly approved.
 
 ## Initial Windows Scope
 
 The initial Windows milestone is limited to:
 
-- Existing WireGuard tunnel functionality
+- Existing tunnel functionality
 - Importing and editing standard tunnel configurations
 - Plain DNS using IP addresses
 - DoH using `DNS = https://...`
@@ -74,14 +76,14 @@ Before modifying code:
 1. Read this file and `ROADMAP.md`.
 2. Inspect the existing implementation before proposing replacements.
 3. Prefer the smallest safe change that accomplishes the task.
-4. Preserve upstream notices and licensing when importing or modifying upstream WireGuard code.
+4. Preserve all required upstream notices and licensing when importing or modifying upstream code.
 
 For each meaningful change:
 
 1. Build the relevant target.
 2. Run existing tests.
 3. Add focused tests for new parsing, DNS, bootstrap, routing, or failure behavior where practical.
-4. Verify normal WireGuard behavior has not regressed.
+4. Verify ordinary tunnel behavior has not regressed.
 5. Document any behavior that could not be tested.
 
 Do not claim a feature works unless it was actually built and tested or the limitation is clearly stated.
@@ -107,7 +109,7 @@ Do not claim a feature works unless it was actually built and tested or the limi
 
 ## Current Priority
 
-The first engineering objective is to establish a clean, reproducible Windows baseline from the WireGuard Windows codebase before adding features.
+The first engineering objective is to establish a clean, reproducible Windows baseline before adding features.
 
 After that, implement DoH support incrementally:
 
@@ -116,7 +118,7 @@ After that, implement DoH support incrementally:
 3. Bootstrap resolution
 4. Tunnel-bound routing
 5. Windows DNS integration
-6. Failure/leak handling
+6. Failure and leak handling
 7. Bootstrap Settings UI
-8. Branding/UI polish
+8. Branding and UI polish
 9. Installer and release packaging
