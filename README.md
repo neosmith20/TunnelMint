@@ -1,38 +1,37 @@
 # TunnelMint
 
-**A simple, user-friendly WireGuard client with smarter DNS.**
+**A simple, user-friendly VPN client with smarter DNS.**
 
-TunnelMint is an independent VPN client built around WireGuard with one core goal: **keep it simple and make the software do the work.**
+TunnelMint is built around one core idea: **keep it simple and make the software do the work.**
 
 The first release is being developed for Windows, with Android planned after the Windows client is stable and polished.
 
 ## Why TunnelMint?
 
-WireGuard is fast, secure, and intentionally simple. TunnelMint aims to preserve that simplicity while adding a few quality-of-life features that should not require users to understand the plumbing underneath.
+TunnelMint aims to provide a fast, simple tunnel client while adding useful features that should not require users to understand the plumbing underneath.
 
 The first major addition is transparent encrypted DNS support.
 
-A normal WireGuard-style DNS entry should continue to work normally:
+A normal DNS entry continues to work normally:
 
 ```ini
 DNS = 1.1.1.1
 ```
 
-But TunnelMint will also understand a DoH endpoint directly:
+TunnelMint will also understand a DNS-over-HTTPS endpoint directly:
 
 ```ini
 DNS = https://dns.example.com/dns-query
 ```
 
-TunnelMint will detect the HTTPS endpoint, bootstrap it automatically, and send the encrypted DNS traffic through the active WireGuard tunnel.
+TunnelMint detects the HTTPS endpoint, bootstraps it automatically, and sends encrypted DNS traffic through the active tunnel.
 
-No separate `EncryptedDNS=true` switch. No unnecessary configuration maze.
+No extra enable switch. No unnecessary configuration maze.
 
 ## Planned v1 Features
 
 - Windows-first client
-- Familiar, simple WireGuard-style workflow
-- Import existing WireGuard tunnel configurations
+- Simple tunnel import and management
 - Standard DNS support using IP addresses
 - DNS-over-HTTPS support using `DNS = https://...`
 - Automatic DNS bootstrap using sensible built-in defaults
@@ -44,9 +43,9 @@ No separate `EncryptedDNS=true` switch. No unnecessary configuration maze.
 
 ## Bootstrap DNS
 
-Encrypted DNS endpoints use hostnames, so TunnelMint may need a traditional DNS resolver briefly to locate the DoH endpoint before encrypted DNS is available.
+Encrypted DNS endpoints use hostnames, so TunnelMint may need a traditional DNS resolver briefly to locate the encrypted DNS endpoint before it becomes available.
 
-TunnelMint is planned to ship with multiple bootstrap resolvers for reliability, while allowing users to change, disable, reorder, or replace them in **Settings**.
+TunnelMint is planned to ship with multiple bootstrap resolvers for reliability while allowing users to change, disable, reorder, or replace them in **Settings**.
 
 Bootstrap DNS is only intended to locate the encrypted DNS endpoint. Normal DNS queries should then use the configured encrypted resolver.
 
@@ -58,7 +57,7 @@ The user should be able to:
 
 1. Download TunnelMint.
 2. Install it.
-3. Import a WireGuard tunnel.
+3. Import a tunnel.
 4. Connect.
 
 Advanced networking details belong inside the software whenever they can be handled safely and automatically.
@@ -71,8 +70,6 @@ TunnelMint is not currently ready for production use. The initial Windows client
 
 See [ROADMAP.md](ROADMAP.md) for the initial development plan.
 
-## WireGuard
+## Tunnel Engine
 
-TunnelMint is intended to use WireGuard as its VPN transport technology while providing its own client experience and additional features around it.
-
-TunnelMint is an independent project and is not affiliated with or endorsed by the WireGuard project.
+TunnelMint uses WireGuard as the underlying tunnel technology while providing its own client experience and additional functionality around it.
