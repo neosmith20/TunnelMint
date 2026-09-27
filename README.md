@@ -71,6 +71,18 @@ TunnelMint is not currently ready for production use. The initial Windows client
 
 See [ROADMAP.md](ROADMAP.md) for the initial development plan.
 
+## Project Policies
+
+- [Contributing](CONTRIBUTING.md)
+- [Contributor Copyright Assignment](CONTRIBUTOR_COPYRIGHT_ASSIGNMENT.md)
+- [Security Policy](SECURITY.md)
+- [Support](SUPPORT.md)
+- [Privacy](PRIVACY.md)
+- [Commercial Licensing](COMMERCIAL_LICENSING.md)
+- [Third-Party Notices](THIRD_PARTY_NOTICES.md)
+- [Trademarks and Branding](TRADEMARKS.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+
 ## Security
 
 Please report security issues according to [SECURITY.md](SECURITY.md). Do not publish private keys, credentials, tunnel configurations, or exploit details in public issues.
