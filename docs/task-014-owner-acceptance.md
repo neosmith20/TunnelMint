@@ -1,36 +1,38 @@
 # Task 014 — Owner Windows v1 Acceptance Evidence
 
-Test target: `codex/task-014-owner-acceptance` at `ca4b76f` (Task 016 implementation plus its verification report).
+Test target: Task 016 head `ca4b76f8044e6fa98b48e9cbcccf2ef6cc25f010`, tested from branch `codex/task-014-owner-acceptance`.
 
-Task 014 is not complete. No owner/manual acceptance checkbox is marked passed by this report.
+Task 014 is blocked by a reproducible startup failure. No tunnel, DNS, DoH, leak, lifecycle, or beta-readiness check is marked passed.
 
-## Environment evidence
+## Environment and secret handling
 
-- The owner-provided file `C:\TunnelMint-Test\owner-acceptance.conf` is present (presence and file size were checked only). Its contents and credentials were not read, copied, logged, staged, or published.
-- The current shell is not elevated (`admin=False`).
-- No `TunnelMintManager` service is installed in this environment.
-- Official WireGuard is installed at `C:\Program Files\WireGuard\wireguard.exe`.
-- The Task 016 client and installer builds produced unsigned development artifacts. The three MSI files are under `installer/dist/`.
+- The current Windows VM was used, as required by the latest Task 014 instructions.
+- Normal Windows elevation works on this VM; an elevated probe reported `admin=True`.
+- The owner-provided `C:\TunnelMint-Test\owner-acceptance.conf` is present. Its contents and credentials were not read, copied, logged, staged, or published.
+- Before this report commit, staged-file verification found no `.conf` file and no `TunnelMint-Test` artifact in the repository.
 
-## Automated evidence available before owner testing
+## Checks completed
 
-The Task 016 implementation and its deterministic tests passed locally, and the pushed implementation SHA passed the hosted Windows validation workflow at [run 36386235313](https://github.com/neosmith20/TunnelMint/actions/runs/36386235313). Those results establish build/test readiness for manual testing; they do not satisfy the real-machine acceptance checks below.
+- Elevated amd64 MSI installation succeeded (`msiexec` exit 0).
+- Installed files are under `C:\Program Files\TunnelMint`, including `tunnelmint.exe`, `wg.exe`, and the required `Notices` files.
+- Official WireGuard remains installed at `C:\Program Files\WireGuard\wireguard.exe`.
+- Elevated uninstall succeeded; the TunnelMint directory was removed while the official WireGuard executable remained.
+- Elevated reinstall succeeded; TunnelMint binaries/notices and official WireGuard were present afterward.
 
-## Owner/manual checks not run
+## Blocking failure
 
-The following groups remain pending on an elevated disposable Windows 11 VM with the owner’s real peer and observation:
+The installed client cannot start. Running the built amd64 executable with `/update` reproduces a startup panic before any UI or service command runs:
 
-- install, launch, manager/service isolation, coexistence with official WireGuard, uninstall/reinstall, and upgrade;
-- plain-DNS handshake, traffic, DNS behavior, and disconnect restoration;
-- full-tunnel and split-tunnel DoH handshake, HTTPS routing, endpoint path preservation, packet capture, and runtime prefix cleanup;
-- normal-user Bootstrap Settings persistence, ordering, custom resolver behavior, and validation errors;
-- failure-closed behavior for bootstrap, TLS, endpoint status, unreachable DoH, activation transition, disconnect, and force-stop cases;
-- reboot, sleep/resume, Ethernet/Wi-Fi changes, and physical network loss/reconnect;
-- IPv6 endpoint routing and DNS leak checks; and
-- installed-package notices, TunnelMint naming, uninstall scope, upstream WireGuard preservation, and expected unsigned-build warnings.
+```text
+panic:
+crypto/internal/fips140.CAST(...)
+crypto/internal/fips140/sha3.init.0()
+```
 
-These checks require native adapter/service access, elevation, real tunnel traffic, packet capture, and owner observation that are unavailable in this shell. No production-readiness or beta-readiness claim is made.
+The stack maps to the repository overlay at `.overlay/crypto/internal/fips140/fips140.go:26`, where the disabled-FIPS `CAST` stub panics. The installed executable exits before TunnelMintManager installation, so no product-created `TunnelMintManager` service exists and no UI window appears. A temporary direct Go diagnostic confirmed the manager installer can create a service when invoked from test code; that diagnostic service was deleted and all temporary files were removed. It is not counted as a product acceptance pass.
 
-## Required owner next step
+## Checks not run
 
-Run the checklist in `TASKS/014-owner-windows-v1-acceptance.md` on the elevated disposable Windows VM using the local-only configuration at `C:\TunnelMint-Test\owner-acceptance.conf`. Record only redacted evidence and turn every failure into a focused follow-up task before release consideration.
+Because the installed client cannot start, these checks remain pending: manager/service lifecycle through the product UI, tunnel import, real handshake and traffic, plain DNS, full/split-tunnel DoH, bootstrap Settings, packet capture and leak checks, failure-closed cases, disconnect cleanup, reboot/sleep/network transitions, IPv6, upstream coexistence through both clients, and package upgrade behavior.
+
+The failed startup must become a focused source fix and be retested before Task 014 can continue. No beta-readiness or production-readiness claim is made.
