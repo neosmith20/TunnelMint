@@ -249,8 +249,19 @@ That initial helper wrote the counter increases under unintended `sent` and
 `tunnelAdapter*BytesDelta` properties. It did not log configuration contents,
 keys, tunnel aliases, or endpoint addresses. The helper is corrected and now
 also records only aggregate route ownership for resolved endpoint candidates;
-a repeat with the same plain-DNS tunnel is required before using it to draw a
-route-selection conclusion. The direct endpoint success alone does not
-establish that the TunnelMint service's DoH startup path is working.
+the owner repeated it with the same plain-DNS tunnel active. All four resolved
+endpoint candidates selected a TunnelMint-adapter route (zero selected a
+non-tunnel route or lacked a route). TCP 443 connected and the direct HTTPS
+DoH POST again returned HTTP 200, with positive sent and received tunnel-byte
+deltas for both checks. This establishes the plain-tunnel route and endpoint
+baseline but does not establish that the TunnelMint service's DoH startup path
+is working.
+
+The next focused DoH retry will add only sanitized service-side transport
+events to the tunnel log: candidate order, IPv4/IPv6 family, connection
+success, and a coarse failure category. It will not log endpoint addresses,
+configuration data, credentials, or keys. No change to routing, timeout,
+TLS validation, DNS fallback, or firewall policy is claimed from that
+diagnostic.
 
 No beta-readiness or production-readiness claim is made.

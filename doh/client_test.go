@@ -21,6 +21,12 @@ import (
 var testDNSQuery = []byte{0x12, 0x34, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 0x00, 0x00, 0x01, 0x00, 0x01}
 var testDNSResponse = []byte{0x12, 0x34, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01}
 
+type testTimeoutError struct{}
+
+func (testTimeoutError) Error() string   { return "timed out" }
+func (testTimeoutError) Timeout() bool   { return true }
+func (testTimeoutError) Temporary() bool { return true }
+
 func newTLSServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *http.Client) {
 	t.Helper()
 	server := httptest.NewTLSServer(handler)
@@ -146,6 +152,28 @@ func TestDialBootstrappedAddressesFallsBackWithinRequestDeadline(t *testing.T) {
 	defer conn.Close()
 	if len(calls) != 2 || calls[0] != first || calls[1] != second {
 		t.Fatalf("dial candidates = %v, want [%v %v]", calls, first, second)
+	}
+}
+
+func TestDoHTransportDiagnosticCategoriesAvoidAddressData(t *testing.T) {
+	if got := dohAddressFamily(netip.MustParseAddr("192.0.2.1")); got != "IPv4" {
+		t.Fatalf("IPv4 family = %q", got)
+	}
+	if got := dohAddressFamily(netip.MustParseAddr("2001:db8::1")); got != "IPv6" {
+		t.Fatalf("IPv6 family = %q", got)
+	}
+	for _, test := range []struct {
+		err  error
+		want string
+	}{
+		{context.DeadlineExceeded, "timeout"},
+		{context.Canceled, "canceled"},
+		{testTimeoutError{}, "timeout"},
+		{errors.New("unreachable"), "network-error"},
+	} {
+		if got := dohDialFailureCategory(test.err); got != test.want {
+			t.Errorf("failure category for %v = %q, want %q", test.err, got, test.want)
+		}
 	}
 }
 
