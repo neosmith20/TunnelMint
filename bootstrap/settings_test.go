@@ -24,7 +24,11 @@ func TestSettingsOrderingAndHandoff(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"9.9.9.9", "1.1.1.1", "149.112.112.112", "8.8.8.8", "8.8.4.4"}
+	want := []string{
+		"8.8.8.8", "1.1.1.1", "8.8.4.4", "4.2.2.1", "4.2.2.2",
+		"2606:4700:4700::1111", "2606:4700:4700::1001", "2001:4860:4860::8888",
+		"2001:4860:4860::8844", "2620:fe::11", "2620:fe::fe:11",
+	}
 	var got []string
 	for _, resolver := range resolvers {
 		got = append(got, resolver.String())
@@ -36,7 +40,7 @@ func TestSettingsOrderingAndHandoff(t *testing.T) {
 
 func TestSettingsValidationAndCustomEntries(t *testing.T) {
 	settings := DefaultSettings()
-	if err := settings.AddCustom("2001:4860:4860::8888"); err != nil {
+	if err := settings.AddCustom("2001:db8::53"); err != nil {
 		t.Fatal(err)
 	}
 	if err := settings.AddCustom("resolver.example"); err == nil {

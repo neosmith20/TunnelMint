@@ -77,7 +77,11 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 	mtw.SetMinMaxSize(walk.Size{500, 400}, walk.Size{0, 0})
 	vlayout := walk.NewVBoxLayout()
 	vlayout.SetMargins(walk.Margins{5, 5, 5, 5})
+	vlayout.SetSpacing(0)
 	mtw.SetLayout(vlayout)
+	if err = addProductHeader(mtw, &disposables); err != nil {
+		return nil, err
+	}
 	mtw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
 		// "Close to tray" instead of exiting application
 		*canceled = true
@@ -140,6 +144,67 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 	disposables.Spare()
 
 	return mtw, nil
+}
+
+func addProductHeader(parent walk.Container, disposables *walk.Disposables) error {
+	header, err := walk.NewComposite(parent)
+	if err != nil {
+		return err
+	}
+	headerLayout := walk.NewHBoxLayout()
+	headerLayout.SetMargins(walk.Margins{14, 12, 14, 10})
+	header.SetLayout(headerLayout)
+	header.SetMinMaxSize(walk.Size{0, 62}, walk.Size{0, 62})
+
+	icon, err := loadLogoIcon(40)
+	if err == nil {
+		imageView, imageErr := walk.NewImageView(header)
+		if imageErr != nil {
+			return imageErr
+		}
+		imageView.SetMode(walk.ImageViewModeCenter)
+		imageView.SetMinMaxSize(walk.Size{40, 40}, walk.Size{40, 40})
+		if err := imageView.SetImage(icon); err != nil {
+			return err
+		}
+	}
+
+	labels, err := walk.NewComposite(header)
+	if err != nil {
+		return err
+	}
+	labelsLayout := walk.NewVBoxLayout()
+	labelsLayout.SetMargins(walk.Margins{10, 0, 0, 0})
+	labelsLayout.SetSpacing(0)
+	labels.SetLayout(labelsLayout)
+	title, err := walk.NewLabel(labels)
+	if err != nil {
+		return err
+	}
+	title.SetText(l18n.Sprintf("TunnelMint"))
+	titleFont, err := walk.NewFont("Segoe UI Semibold", 13, 0)
+	if err == nil {
+		title.SetFont(titleFont)
+		disposables.Add(titleFont)
+	}
+	subtitle, err := walk.NewLabel(labels)
+	if err != nil {
+		return err
+	}
+	subtitle.SetText(l18n.Sprintf("Private network control"))
+
+	accent, err := walk.NewComposite(parent)
+	if err != nil {
+		return err
+	}
+	accent.SetMinMaxSize(walk.Size{0, 3}, walk.Size{0, 3})
+	brush, err := walk.NewSolidColorBrush(walk.RGB(23, 195, 210))
+	if err != nil {
+		return err
+	}
+	accent.SetBackground(brush)
+	disposables.Add(brush)
+	return nil
 }
 
 func (mtw *ManageTunnelsWindow) Dispose() {

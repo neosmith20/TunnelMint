@@ -28,15 +28,34 @@ const (
 var defaultResolvers = []netip.Addr{
 	netip.MustParseAddr("1.1.1.1"),
 	netip.MustParseAddr("1.0.0.1"),
-	netip.MustParseAddr("9.9.9.9"),
-	netip.MustParseAddr("149.112.112.112"),
 	netip.MustParseAddr("8.8.8.8"),
 	netip.MustParseAddr("8.8.4.4"),
+	netip.MustParseAddr("4.2.2.1"),
+	netip.MustParseAddr("4.2.2.2"),
+	netip.MustParseAddr("2606:4700:4700::1111"),
+	netip.MustParseAddr("2606:4700:4700::1001"),
+	netip.MustParseAddr("2001:4860:4860::8888"),
+	netip.MustParseAddr("2001:4860:4860::8844"),
+	netip.MustParseAddr("2620:fe::11"),
+	netip.MustParseAddr("2620:fe::fe:11"),
 }
 
 // DefaultResolvers returns the built-in ordered bootstrap resolver list.
 func DefaultResolvers() []netip.Addr {
 	return append([]netip.Addr(nil), defaultResolvers...)
+}
+
+// ResolversForFamilies keeps enabled bootstrap resolvers whose address family
+// can carry the encrypted-DNS path. Callers select the families from the
+// tunnel configuration; this function never substitutes another family.
+func ResolversForFamilies(resolvers []netip.Addr, allowIPv4, allowIPv6 bool) []netip.Addr {
+	filtered := make([]netip.Addr, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		if (resolver.Is4() && allowIPv4) || (resolver.Is6() && allowIPv6) {
+			filtered = append(filtered, resolver)
+		}
+	}
+	return filtered
 }
 
 // LookupFunc resolves host through one explicitly selected bootstrap resolver.
@@ -214,7 +233,7 @@ func (r *Resolver) ResolveHost(ctx context.Context, host string) ([]netip.Addr, 
 			}
 			continue
 		}
-		addresses = uniqueAddresses(addresses)
+		addresses = addressesForFamily(addresses, resolver)
 		if len(addresses) == 0 {
 			failures = append(failures, fmt.Sprintf("%s: no addresses", resolver))
 			continue
@@ -231,6 +250,16 @@ func (r *Resolver) ResolveHost(ctx context.Context, host string) ([]netip.Addr, 
 		return nil, fmt.Errorf("bootstrap resolution for %q failed: %w", host, lastLookupErr)
 	}
 	return nil, fmt.Errorf("bootstrap resolution for %q failed: %s", host, strings.Join(failures, "; "))
+}
+
+func addressesForFamily(addresses []netip.Addr, resolver netip.Addr) []netip.Addr {
+	filtered := make([]netip.Addr, 0, len(addresses))
+	for _, address := range addresses {
+		if (resolver.Is4() && address.Is4()) || (resolver.Is6() && address.Is6()) {
+			filtered = append(filtered, address)
+		}
+	}
+	return uniqueAddresses(filtered)
 }
 
 // InvalidateEndpoint removes a cached hostname after a tunnel/network change.

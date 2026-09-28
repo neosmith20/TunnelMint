@@ -19,7 +19,11 @@ import (
 )
 
 func TestDefaultResolvers(t *testing.T) {
-	want := []string{"1.1.1.1", "1.0.0.1", "9.9.9.9", "149.112.112.112", "8.8.8.8", "8.8.4.4"}
+	want := []string{
+		"1.1.1.1", "1.0.0.1", "8.8.8.8", "8.8.4.4", "4.2.2.1", "4.2.2.2",
+		"2606:4700:4700::1111", "2606:4700:4700::1001", "2001:4860:4860::8888",
+		"2001:4860:4860::8844", "2620:fe::11", "2620:fe::fe:11",
+	}
 	got := DefaultResolvers()
 	if len(got) != len(want) {
 		t.Fatalf("default resolver count = %d, want %d", len(got), len(want))
@@ -52,8 +56,24 @@ func TestResolveEndpointOrderedFailoverAndFamilies(t *testing.T) {
 	if len(calls) != 2 || calls[0] != first || calls[1] != second {
 		t.Fatalf("resolver call order = %v", calls)
 	}
-	if len(addresses) != 2 || addresses[0] != ipv4 || addresses[1] != ipv6 {
+	if len(addresses) != 1 || addresses[0] != ipv4 {
 		t.Fatalf("addresses = %v", addresses)
+	}
+}
+
+func TestResolversForFamilies(t *testing.T) {
+	resolvers := []netip.Addr{
+		netip.MustParseAddr("192.0.2.1"),
+		netip.MustParseAddr("2001:db8::1"),
+	}
+	if got := ResolversForFamilies(resolvers, true, false); len(got) != 1 || !got[0].Is4() {
+		t.Fatalf("IPv4 resolvers = %v", got)
+	}
+	if got := ResolversForFamilies(resolvers, false, true); len(got) != 1 || !got[0].Is6() {
+		t.Fatalf("IPv6 resolvers = %v", got)
+	}
+	if got := ResolversForFamilies(resolvers, true, true); len(got) != len(resolvers) {
+		t.Fatalf("dual-stack resolvers = %v", got)
 	}
 }
 

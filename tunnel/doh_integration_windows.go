@@ -35,6 +35,24 @@ func encryptedDNSConfigured(config *conf.Config) bool {
 	return config != nil && len(config.Interface.DNSOverHTTPS) > 0
 }
 
+func bootstrapResolversForConfig(config *conf.Config, resolvers []netip.Addr) []netip.Addr {
+	var allowIPv4, allowIPv6 bool
+	for _, family := range configuredInterfaceFamilies(config) {
+		switch family {
+		case windows.AF_INET:
+			allowIPv4 = true
+		case windows.AF_INET6:
+			allowIPv6 = true
+		}
+	}
+	if !allowIPv4 && !allowIPv6 {
+		// Preserve the existing configuration error path when the tunnel has no
+		// usable family information yet.
+		return append([]netip.Addr(nil), resolvers...)
+	}
+	return bootstrap.ResolversForFamilies(resolvers, allowIPv4, allowIPv6)
+}
+
 func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcfg.LUID, adapter *driver.Adapter, configuredResolvers []netip.Addr) (*dohruntime.Session, error) {
 	if !encryptedDNSConfigured(config) {
 		return nil, nil
