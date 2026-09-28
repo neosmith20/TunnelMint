@@ -21,10 +21,11 @@ import (
 type ManageTunnelsWindow struct {
 	walk.FormBase
 
-	tabs        *walk.TabWidget
-	tunnelsPage *TunnelsPage
-	logPage     *LogPage
-	updatePage  *UpdatePage
+	tabs         *walk.TabWidget
+	tunnelsPage  *TunnelsPage
+	logPage      *LogPage
+	settingsPage *SettingsPage
+	updatePage   *UpdatePage
 
 	tunnelChangedCB *manager.TunnelChangeCallback
 }
@@ -101,6 +102,11 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 		return nil, err
 	}
 	mtw.tabs.Pages().Add(mtw.logPage.TabPage)
+
+	if mtw.settingsPage, err = NewSettingsPage(); err != nil {
+		return nil, err
+	}
+	mtw.tabs.Pages().Add(mtw.settingsPage.TabPage)
 
 	mtw.VisibleChanged().Attach(func() {
 		if mtw.Visible() {
@@ -215,12 +221,10 @@ func (mtw *ManageTunnelsWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lPara
 		}
 		if !mtw.Visible() {
 			mtw.tunnelsPage.listView.SelectFirstActiveTunnel()
-			if mtw.tabs.Pages().Len() != 3 {
-				mtw.tabs.SetCurrentIndex(0)
-			}
+			mtw.tabs.SetCurrentIndex(0)
 		}
-		if mtw.tabs.Pages().Len() == 3 {
-			mtw.tabs.SetCurrentIndex(2)
+		if mtw.updatePage != nil {
+			mtw.tabs.SetCurrentIndex(mtw.tabs.Pages().Index(mtw.updatePage.TabPage))
 		}
 		raise(mtw.Handle())
 		return 0

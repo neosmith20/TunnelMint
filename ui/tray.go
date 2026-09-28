@@ -350,7 +350,9 @@ func (tray *Tray) UpdateFound() {
 		if !tray.mtw.Visible() {
 			tray.mtw.tunnelsPage.listView.SelectFirstActiveTunnel()
 		}
-		tray.mtw.tabs.SetCurrentIndex(2)
+		if tray.mtw.updatePage != nil {
+			tray.mtw.tabs.SetCurrentIndex(tray.mtw.tabs.Pages().Index(tray.mtw.updatePage.TabPage))
+		}
 		raise(tray.mtw.Handle())
 	}
 	action.Triggered().Attach(showUpdateTab)

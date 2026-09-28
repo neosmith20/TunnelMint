@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"path/filepath"
 	"time"
 
 	"golang.org/x/sys/windows"
@@ -40,7 +41,11 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 		return nil, errors.New("exactly one encrypted DNS endpoint is supported per tunnel")
 	}
 	endpoint := config.Interface.DNSOverHTTPS[0]
-	resolver := bootstrap.NewResolver(nil)
+	bootstrapResolvers, err := configuredBootstrapResolvers()
+	if err != nil {
+		return nil, err
+	}
+	resolver := bootstrap.NewResolver(bootstrapResolvers)
 	resolver.Timeout = dohRuntimeTimeout
 	peerEndpoints := make([]netip.Addr, 0, len(config.Peers))
 	for _, peer := range config.Peers {
@@ -127,6 +132,22 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 		},
 	}
 	return dohruntime.Activate(ctx, dohruntime.Config{Endpoint: endpoint, PeerEndpointAddress: peerEndpoints}, hooks)
+}
+
+func configuredBootstrapResolvers() ([]netip.Addr, error) {
+	root, err := conf.RootDirectory(true)
+	if err != nil {
+		return nil, errors.New("locate TunnelMint data directory: " + err.Error())
+	}
+	settings, err := bootstrap.Load(filepath.Join(root, "bootstrap-dns.json"))
+	if err != nil {
+		return nil, errors.New("load bootstrap DNS settings: " + err.Error())
+	}
+	resolvers, err := settings.EnabledResolvers()
+	if err != nil {
+		return nil, errors.New("validate bootstrap DNS settings: " + err.Error())
+	}
+	return resolvers, nil
 }
 
 func dohProbeQuery() []byte {

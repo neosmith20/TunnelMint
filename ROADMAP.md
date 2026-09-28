@@ -48,11 +48,11 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 
 Add a simple Settings area for bootstrap DNS.
 
-- [ ] Show built-in bootstrap resolvers.
-- [ ] Allow resolvers to be enabled or disabled.
-- [ ] Allow resolvers to be reordered.
-- [ ] Allow custom bootstrap resolvers.
-- [ ] Allow restoring defaults.
+- [x] Show built-in bootstrap resolvers.
+- [x] Allow resolvers to be enabled or disabled.
+- [x] Allow resolvers to be reordered.
+- [x] Allow custom bootstrap resolvers.
+- [x] Allow restoring defaults.
 - [ ] Keep normal users out of advanced configuration unless they choose to open it.
 
 **Exit criteria:** Default behavior requires no setup, while users retain control over bootstrap resolver choices.
