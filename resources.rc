@@ -33,7 +33,7 @@ BEGIN \
       VALUE "FileVersion", EXPAND(WIREGUARD_VERSION_STR) \
       VALUE "InternalName", "tunnelmint-windows" \
       VALUE "LegalCopyright", "Copyright © 2015-2026 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved." \
-      VALUE "OriginalFilename", "wireguard.exe" \
+      VALUE "OriginalFilename", "tunnelmint.exe" \
       VALUE "ProductName", "TunnelMint" \
       VALUE "ProductVersion", EXPAND(WIREGUARD_VERSION_STR) \
       VALUE "Comments", comments \

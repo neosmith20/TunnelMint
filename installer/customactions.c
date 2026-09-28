@@ -170,9 +170,9 @@ static UINT insert_service_control(MSIHANDLE installer, MSIHANDLE view, const TC
 	static unsigned int index = 0;
 	UINT ret;
 	MSIHANDLE record;
-	TCHAR row_identifier[_countof(TEXT("wireguard_service_control_4294967296"))];
+	TCHAR row_identifier[_countof(TEXT("tunnelmint_service_control_4294967296"))];
 
-	if (_sntprintf(row_identifier, _countof(row_identifier), TEXT("wireguard_service_control_%u"), ++index) >= _countof(row_identifier))
+	if (_sntprintf(row_identifier, _countof(row_identifier), TEXT("tunnelmint_service_control_%u"), ++index) >= _countof(row_identifier))
 		return ERROR_INSTALL_FAILURE;
 	record = MsiCreateRecord(5);
 	if (!record)
@@ -181,7 +181,7 @@ static UINT insert_service_control(MSIHANDLE installer, MSIHANDLE view, const TC
 	MsiRecordSetString (record, 1/*ServiceControl*/, row_identifier);
 	MsiRecordSetString (record, 2/*Name          */, service_name);
 	MsiRecordSetInteger(record, 3/*Event         */, msidbServiceControlEventStop | msidbServiceControlEventUninstallStop | msidbServiceControlEventUninstallDelete);
-	MsiRecordSetString (record, 4/*Component_    */, TEXT("WireGuardExecutable"));
+	MsiRecordSetString (record, 4/*Component_    */, TEXT("TunnelMintExecutable"));
 	MsiRecordSetInteger(record, 5/*Wait          */, 1); /* Waits 30 seconds. */
 	log_messagef(installer, LOG_LEVEL_INFO, TEXT("Scheduling stop on upgrade or removal on uninstall of service %1"), service_name);
 	ret = MsiViewExecute(view, record);
@@ -194,12 +194,12 @@ static UINT insert_service_control(MSIHANDLE installer, MSIHANDLE view, const TC
 		goto out;
 
 	ret = ERROR_INSTALL_FAILURE;
-	if (_sntprintf(row_identifier, _countof(row_identifier), TEXT("wireguard_service_control_%u"), ++index) >= _countof(row_identifier))
+	if (_sntprintf(row_identifier, _countof(row_identifier), TEXT("tunnelmint_service_control_%u"), ++index) >= _countof(row_identifier))
 		goto out;
 	MsiRecordSetString (record, 1/*ServiceControl*/, row_identifier);
 	MsiRecordSetString (record, 2/*Name          */, service_name);
 	MsiRecordSetInteger(record, 3/*Event         */, msidbServiceControlEventStart);
-	MsiRecordSetString (record, 4/*Component_    */, TEXT("WireGuardExecutable"));
+	MsiRecordSetString (record, 4/*Component_    */, TEXT("TunnelMintExecutable"));
 	MsiRecordSetInteger(record, 5/*Wait          */, 0); /* No wait, so that failure to restart again isn't fatal. */
 	log_messagef(installer, LOG_LEVEL_INFO, TEXT("Scheduling start on upgrade of service %1"), service_name);
 	ret = MsiViewExecute(view, record);
@@ -213,7 +213,7 @@ out:
 	return ret;
 }
 
-__declspec(dllexport) UINT __stdcall EvaluateWireGuardServices(MSIHANDLE installer)
+__declspec(dllexport) UINT __stdcall EvaluateTunnelMintServices(MSIHANDLE installer)
 {
 	UINT ret = ERROR_INSTALL_FAILURE;
 	bool is_com_initialized = SUCCEEDED(CoInitialize(NULL));
@@ -295,15 +295,15 @@ __declspec(dllexport) UINT __stdcall LaunchApplicationAndAbort(MSIHANDLE install
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si = { .cb = sizeof(STARTUPINFO) };
 
-	ret = MsiGetProperty(installer, TEXT("WireGuardFolder"), path, &path_len);
+	ret = MsiGetProperty(installer, TEXT("TunnelMintFolder"), path, &path_len);
 	if (ret != ERROR_SUCCESS) {
-		log_errorf(installer, LOG_LEVEL_WARN, ret, TEXT("MsiGetProperty(\"WireGuardFolder\") failed"));
+		log_errorf(installer, LOG_LEVEL_WARN, ret, TEXT("MsiGetProperty(\"TunnelMintFolder\") failed"));
 		goto out;
 	}
-	if (!path[0] || !PathAppend(path, TEXT("wireguard.exe")))
+	if (!path[0] || !PathAppend(path, TEXT("tunnelmint.exe")))
 		goto out;
 	log_messagef(installer, LOG_LEVEL_INFO, TEXT("Launching %1"), path);
-	if (!CreateProcess(path, TEXT("wireguard"), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+	if (!CreateProcess(path, TEXT("tunnelmint"), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 		log_errorf(installer, LOG_LEVEL_WARN, GetLastError(), TEXT("Failed to create \"%1\" process"), path);
 		goto out;
 	}
@@ -315,7 +315,7 @@ out:
 	return ERROR_INSTALL_USEREXIT;
 }
 
-__declspec(dllexport) UINT __stdcall EvaluateWireGuardComponents(MSIHANDLE installer)
+__declspec(dllexport) UINT __stdcall EvaluateTunnelMintComponents(MSIHANDLE installer)
 {
 	UINT ret = ERROR_INSTALL_FAILURE;
 	bool is_com_initialized = SUCCEEDED(CoInitialize(NULL));
@@ -323,29 +323,29 @@ __declspec(dllexport) UINT __stdcall EvaluateWireGuardComponents(MSIHANDLE insta
 	TCHAR path[MAX_PATH];
 	DWORD path_len = _countof(path);
 
-	ret = MsiGetComponentState(installer, TEXT("WireGuardExecutable"), &component_installed, &component_action);
+	ret = MsiGetComponentState(installer, TEXT("TunnelMintExecutable"), &component_installed, &component_action);
 	if (ret != ERROR_SUCCESS) {
-		log_errorf(installer, LOG_LEVEL_ERR, ret, TEXT("MsiGetComponentState(\"WireGuardExecutable\") failed"));
+		log_errorf(installer, LOG_LEVEL_ERR, ret, TEXT("MsiGetComponentState(\"TunnelMintExecutable\") failed"));
 		goto out;
 	}
-	ret = MsiGetProperty(installer, TEXT("WireGuardFolder"), path, &path_len);
+	ret = MsiGetProperty(installer, TEXT("TunnelMintFolder"), path, &path_len);
 	if (ret != ERROR_SUCCESS) {
-		log_errorf(installer, LOG_LEVEL_ERR, ret, TEXT("MsiGetProperty(\"WireGuardFolder\") failed"));
+		log_errorf(installer, LOG_LEVEL_ERR, ret, TEXT("MsiGetProperty(\"TunnelMintFolder\") failed"));
 		goto out;
 	}
 
 	if (component_action >= INSTALLSTATE_LOCAL) {
-		/* WireGuardExecutable component shall be installed. */
-		ret = MsiSetProperty(installer, TEXT("KillWireGuardProcesses"), path);
+		/* TunnelMintExecutable component shall be installed. */
+		ret = MsiSetProperty(installer, TEXT("KillTunnelMintProcesses"), path);
 		if (ret != ERROR_SUCCESS) {
-			log_errorf(installer, LOG_LEVEL_ERR, ret, TEXT("MsiSetProperty(\"KillWireGuardProcesses\") failed"));
+			log_errorf(installer, LOG_LEVEL_ERR, ret, TEXT("MsiSetProperty(\"KillTunnelMintProcesses\") failed"));
 			goto out;
 		}
 	} else if (component_action >= INSTALLSTATE_REMOVED) {
-		/* WireGuardExecutable component shall be uninstalled. */
-		ret = MsiSetProperty(installer, TEXT("KillWireGuardProcesses"), path);
+		/* TunnelMintExecutable component shall be uninstalled. */
+		ret = MsiSetProperty(installer, TEXT("KillTunnelMintProcesses"), path);
 		if (ret != ERROR_SUCCESS) {
-			log_errorf(installer, LOG_LEVEL_ERR, ret, TEXT("MsiSetProperty(\"KillWireGuardProcesses\") failed"));
+			log_errorf(installer, LOG_LEVEL_ERR, ret, TEXT("MsiSetProperty(\"KillTunnelMintProcesses\") failed"));
 			goto out;
 		}
 		ret = MsiSetProperty(installer, TEXT("RemoveConfigFolder"), path);
@@ -410,7 +410,7 @@ static bool calculate_file_id(const TCHAR *path, struct file_id *id)
 	return ret;
 }
 
-__declspec(dllexport) UINT __stdcall KillWireGuardProcesses(MSIHANDLE installer)
+__declspec(dllexport) UINT __stdcall KillTunnelMintProcesses(MSIHANDLE installer)
 {
 	HANDLE snapshot, process;
 	PROCESSENTRY32 entry = { .dwSize = sizeof(PROCESSENTRY32) };
@@ -430,7 +430,7 @@ __declspec(dllexport) UINT __stdcall KillWireGuardProcesses(MSIHANDLE installer)
 		goto out;
 
 	if (!PathCombine(executables[0], process_path, TEXT("wg.exe")) ||
-	    !PathCombine(executables[1], process_path, TEXT("wireguard.exe")))
+	    !PathCombine(executables[1], process_path, TEXT("tunnelmint.exe")))
 		goto out;
 	if (can_be_deleted(executables[0]) && can_be_deleted(executables[1]))
 		goto out;
@@ -450,7 +450,7 @@ retry:
 	if (snapshot == INVALID_HANDLE_VALUE)
 		goto out;
 	for (bool ret = Process32First(snapshot, &entry); ret; ret = Process32Next(snapshot, &entry)) {
-		if (_tcsicmp(entry.szExeFile, TEXT("wireguard.exe")) && _tcsicmp(entry.szExeFile, TEXT("wg.exe")))
+		if (_tcsicmp(entry.szExeFile, TEXT("tunnelmint.exe")) && _tcsicmp(entry.szExeFile, TEXT("wg.exe")))
 			continue;
 		process = OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION, false, entry.th32ProcessID);
 		if (!process) {
@@ -605,7 +605,7 @@ __declspec(dllexport) UINT __stdcall RemoveAdapters(MSIHANDLE installer)
 		log_errorf(installer, LOG_LEVEL_WARN, ret, TEXT("MsiGetProperty(\"CustomActionData\") failed"));
 		goto out;
 	}
-	if (!path[0] || !PathAppend(path, TEXT("wireguard.exe")))
+	if (!path[0] || !PathAppend(path, TEXT("tunnelmint.exe")))
 		goto out;
 
 	if (!CreatePipe(&pipe, &si.hStdOutput, NULL, 0)) {
@@ -616,7 +616,7 @@ __declspec(dllexport) UINT __stdcall RemoveAdapters(MSIHANDLE installer)
 		log_errorf(installer, LOG_LEVEL_WARN, GetLastError(), TEXT("SetHandleInformation failed"));
 		goto cleanup_pipe_w;
 	}
-	if (!CreateProcess(path, TEXT("wireguard /removedriver"), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+	if (!CreateProcess(path, TEXT("tunnelmint /removedriver"), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 		log_errorf(installer, LOG_LEVEL_WARN, GetLastError(), TEXT("Failed to create \"%1\" process"), path);
 		goto cleanup_pipe_w;
 	}
