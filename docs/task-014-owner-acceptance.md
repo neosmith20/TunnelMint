@@ -376,4 +376,27 @@ response. This is real-machine evidence that the tested encrypted-DNS path
 fails closed without observed plaintext DNS traffic. Exact endpoint
 path/client-ID preservation still requires the sanitized resolver request log.
 
+While this matched external DoH tunnel was connected, the owner confirmed that
+the AdGuard resolver log recorded a fresh `ipv6.msftncsi.com` query under the
+client/profile selected by the exact DoH URL configured in TunnelMint. This is
+server-side evidence that live Windows DNS traffic reached the configured DoH
+path/client identity. No endpoint URL, client identifier, or resolver log
+contents were copied into this repository.
+
+The owner then ran the elevated live-tunnel state probe with this tunnel
+connected. It found a running TunnelMint Manager, one running tunnel service,
+one up tunnel adapter, and eight routes on that adapter. The bounded HTTPS
+traffic probe connected successfully and the adapter counters increased by
+31,040 bytes sent and 30,112 bytes received. This is real-machine evidence
+that ordinary traffic traversed the active tunnel during the full-tunnel DoH
+test.
+
+The owner then ran the elevated disconnect-cleanup probe. Before disconnect,
+the tunnel service and adapter were running and the adapter had eight routes.
+After disconnecting through the TunnelMint UI, the tunnel service and adapter
+were absent and no tunnel routes remained. Ordinary HTTPS connectivity and DNS
+resolution both succeeded afterward. This is real-machine evidence of clean
+service, adapter, route, and ordinary-networking restoration for this tested
+DoH tunnel.
+
 No beta-readiness or production-readiness claim is made.
