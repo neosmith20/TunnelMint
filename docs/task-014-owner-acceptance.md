@@ -77,8 +77,9 @@ disabled.
 GitHub Actions runs `amd64\tunnelmint.exe /update` immediately after the
 Windows client build to catch future package-initialization failures.
 
-The corrected current-main tree was revalidated at startup-fix commit pending
-after the rebase:
+The corrected current-main tree was revalidated at source commit
+`ac715cc3aa2c964d3a2a188c529bed5a47401d31`; the following evidence-only
+commit does not change the built source:
 
 - `go test -vet=off ./bootstrap ./dnsproxy ./doh ./dohruntime ./product`
 - `go test -vet=off ./tunnel ./tunnel/firewall ./manager ./ui`
