@@ -124,4 +124,9 @@ The installed fixed-MSI `/update` and normal manager/UI checks therefore did
 not run. This is a Windows desktop-session access failure, not a TunnelMint
 product result. The owner configuration was not read, copied, or modified.
 
+`scripts/task014-elevated-setup.ps1` is prepared for one manual run from an
+Administrator PowerShell window on this same VM. It performs only the blocked
+uninstall/install/startup/service checks and writes sanitized local results;
+it does not read or print the owner tunnel configuration.
+
 No beta-readiness or production-readiness claim is made.
