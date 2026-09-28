@@ -206,4 +206,25 @@ three Windows client architectures rebuilt successfully.
 This remains unverified on the live VM until a newly packaged and installed
 amd64 MSI repeats the owner DoH activation successfully.
 
+## DoH activation ordering regression
+
+The owner installed the candidate-failover fix and repeated the same DoH
+activation. It produced the same bounded transport timeout, confirming that
+candidate failover was not the sole cause. No plaintext fallback occurred.
+
+The remaining startup defect was an ordering race: the tunnel service began
+DoH verification immediately after bringing the adapter up, while the adapter
+watcher configured addresses and routes asynchronously. The verification could
+therefore start before the selected tunnel family had an address and route.
+The pending focused fix waits for every address family used by the tunnel to
+finish its initial interface configuration before beginning encrypted-DNS
+activation. It does not relax certificate validation, firewall policy, routing
+ownership, bootstrap rules, or the request timeout.
+
+Focused tunnel and DoH tests, including the production-overlay TLS smoke test,
+pass. All three Windows client architectures rebuilt, and the rebuilt amd64
+`/update` smoke test exits successfully. This fix still requires packaging,
+installation, and a third live DoH retry before any DoH acceptance item can be
+marked passed.
+
 No beta-readiness or production-readiness claim is made.

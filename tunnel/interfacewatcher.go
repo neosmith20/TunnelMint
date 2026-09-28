@@ -167,6 +167,25 @@ func (iw *interfaceWatcher) SetRecovery(recover func() error) {
 	iw.setupMutex.Unlock()
 }
 
+// WaitForInitialConfiguration waits until each family used by the tunnel has
+// received its initial interface configuration. Encrypted DNS must not verify
+// its transport before the adapter's routes and addresses are available.
+func (iw *interfaceWatcher) WaitForInitialConfiguration(families []winipcfg.AddressFamily) (services.Error, error) {
+	pending := make(map[winipcfg.AddressFamily]bool, len(families))
+	for _, family := range families {
+		pending[family] = true
+	}
+	for len(pending) > 0 {
+		select {
+		case family := <-iw.started:
+			delete(pending, family)
+		case event := <-iw.errors:
+			return event.serviceError, event.err
+		}
+	}
+	return services.ErrorSuccess, nil
+}
+
 func (iw *interfaceWatcher) Destroy() {
 	iw.setupMutex.Lock()
 	iw.recover = nil
