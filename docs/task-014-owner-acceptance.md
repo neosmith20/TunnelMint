@@ -77,8 +77,20 @@ disabled.
 GitHub Actions runs `amd64\tunnelmint.exe /update` immediately after the
 Windows client build to catch future package-initialization failures.
 
-The corrected current-main tree must be fully revalidated before recording
-built-executable, MSI, or CI results here.
+The corrected current-main tree was revalidated at startup-fix commit pending
+after the rebase:
+
+- `go test -vet=off ./bootstrap ./dnsproxy ./doh ./dohruntime ./product`
+- `go test -vet=off ./tunnel ./tunnel/firewall ./manager ./ui`
+- Focused `./conf` DNS/DoH parser tests, including `ResolveEndpointsWith`
+- `cmd /c build.bat` for x86, amd64, and arm64
+- `amd64\tunnelmint.exe /update`, which exited normally without a
+  package-initialization panic and reported that updates are disabled until
+  signing infrastructure is available
+- `cmd /c installer\build.bat` for x86, amd64, and arm64
+
+GitHub Actions validation remains pending until the corrected branch is
+pushed and its pull request runs.
 
 ## Installed-product retest status
 
