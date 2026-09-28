@@ -9,6 +9,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -171,13 +172,32 @@ func (r *Resolver) ResolveEndpoint(ctx context.Context, endpoint string) ([]neti
 		lookup = lookupWithResolver
 	}
 	var failures []string
-	for _, resolver := range r.Resolvers {
+	var lastLookupErr error
+	deadline, hasDeadline := resolveCtx.Deadline()
+	for index, resolver := range r.Resolvers {
 		if !resolver.IsValid() {
 			failures = append(failures, "invalid resolver address")
 			continue
 		}
-		addresses, lookupErr := lookup(resolveCtx, resolver, host)
+		attemptCtx := resolveCtx
+		var attemptCancel context.CancelFunc
+		if hasDeadline {
+			remaining := len(r.Resolvers) - index
+			attemptBudget := time.Until(deadline) / time.Duration(remaining)
+			if attemptBudget <= 0 {
+				break
+			}
+			// Keep each dead resolver from consuming the complete overall
+			// deadline, while still allowing the final resolver the remaining
+			// time in the bootstrap budget.
+			attemptCtx, attemptCancel = context.WithTimeout(resolveCtx, attemptBudget)
+		}
+		addresses, lookupErr := lookup(attemptCtx, resolver, host)
+		if attemptCancel != nil {
+			attemptCancel()
+		}
 		if lookupErr != nil {
+			lastLookupErr = lookupErr
 			failures = append(failures, fmt.Sprintf("%s: %v", resolver, lookupErr))
 			if resolveCtx.Err() != nil {
 				break
@@ -196,6 +216,9 @@ func (r *Resolver) ResolveEndpoint(ctx context.Context, endpoint string) ([]neti
 	}
 	if resolveCtx.Err() != nil {
 		return nil, fmt.Errorf("bootstrap resolution for %q failed: %w", host, resolveCtx.Err())
+	}
+	if errors.Is(lastLookupErr, context.DeadlineExceeded) || errors.Is(lastLookupErr, context.Canceled) {
+		return nil, fmt.Errorf("bootstrap resolution for %q failed: %w", host, lastLookupErr)
 	}
 	return nil, fmt.Errorf("bootstrap resolution for %q failed: %s", host, strings.Join(failures, "; "))
 }

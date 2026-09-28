@@ -21,9 +21,17 @@ The Windows tunnel foundation is incorporated from the official
 `6ece77bc487c8aa697e3c092197621c4f3e5ccb8`:
 
 - Source: https://github.com/WireGuard/wireguard-windows
-- License: MIT
-- Required notice: [WIREGUARD-COPYING](WIREGUARD-COPYING)
+- License: mixed file-level licensing; the core WireGuard Windows source is
+  generally MIT-marked, while the imported installer and fetcher sources carry
+  GPL-2.0 SPDX markers. The applicable license is the marker in each file.
+- Required notices: [WIREGUARD-COPYING](WIREGUARD-COPYING) for MIT-marked
+  WireGuard components and [GPL-2.0.txt](GPL-2.0.txt) for the GPL-2.0-marked
+  installer sources. The distributed package also includes this inventory.
 - Upstream documentation: [wireguard-windows-upstream-README.md](docs/wireguard-windows-upstream-README.md)
 - Build/provenance record: [docs/windows-baseline.md](docs/windows-baseline.md)
 
 Upstream source files retain their original copyright and SPDX headers.
+In particular, `installer/wireguard.wxs` and the sources under
+`installer/fetcher/` are GPL-2.0-marked; they are not relicensed as
+TunnelMint-owned code. TunnelMint's original code remains governed by the
+project [LICENSE](LICENSE).

@@ -65,7 +65,9 @@
 		-->
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="$(var.PlatformProgramFilesFolder)">
-				<Directory Id="TunnelMintFolder" Name="TunnelMint" />
+				<Directory Id="TunnelMintFolder" Name="TunnelMint">
+					<Directory Id="TunnelMintNoticesFolder" Name="Notices" />
+				</Directory>
 			</Directory>
 			<Directory Id="ProgramMenuFolder" />
 		</Directory>
@@ -83,6 +85,18 @@
 			<Component Directory="TunnelMintFolder" Id="TunnelMintWgExecutable" Guid="0f2e419a-d4f9-4ebc-8ebc-378f90e5d3e3">
 				<File Source="..\$(var.WIREGUARD_PLATFORM)\wg.exe" KeyPath="yes" />
 				<Environment Id="PATH" Name="PATH" System="yes" Action="set" Part="last" Permanent="no" Value="[TunnelMintFolder]" />
+			</Component>
+			<Component Directory="TunnelMintNoticesFolder" Id="TunnelMintLicense" Guid="a1a4d19f-13ce-4d79-a1fb-e9cb1a9f8eb5">
+				<File Source="..\LICENSE" KeyPath="yes" />
+			</Component>
+			<Component Directory="TunnelMintNoticesFolder" Id="TunnelMintWireGuardCopying" Guid="50b7ae91-5b45-4d57-bf26-00e43e93707b">
+				<File Source="..\WIREGUARD-COPYING" KeyPath="yes" />
+			</Component>
+			<Component Directory="TunnelMintNoticesFolder" Id="TunnelMintThirdPartyNotices" Guid="b1c1d5c4-2e84-4cc5-a530-7a6d0b6db078">
+				<File Source="..\THIRD_PARTY_NOTICES.md" KeyPath="yes" />
+			</Component>
+			<Component Directory="TunnelMintNoticesFolder" Id="TunnelMintGPL2" Guid="ce8f0ac8-34d1-4e8b-a62f-593e0e3a2e35">
+				<File Source="..\GPL-2.0.txt" KeyPath="yes" />
 			</Component>
 		</ComponentGroup>
 

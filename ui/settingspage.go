@@ -9,19 +9,17 @@ package ui
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/lxn/walk"
 
 	"golang.zx2c4.com/wireguard/windows/bootstrap"
-	"golang.zx2c4.com/wireguard/windows/conf"
 	"golang.zx2c4.com/wireguard/windows/l18n"
+	"golang.zx2c4.com/wireguard/windows/manager"
 )
 
 type SettingsPage struct {
 	*walk.TabPage
 	settings bootstrap.Settings
-	path     string
 	model    *bootstrapSettingsModel
 	list     *walk.ListBox
 	status   *walk.TextLabel
@@ -29,12 +27,8 @@ type SettingsPage struct {
 
 func NewSettingsPage() (*SettingsPage, error) {
 	page := &SettingsPage{}
-	root, err := conf.RootDirectory(true)
-	if err != nil {
-		return nil, err
-	}
-	page.path = filepath.Join(root, "bootstrap-dns.json")
-	page.settings, err = bootstrap.Load(page.path)
+	var err error
+	page.settings, err = manager.IPCClientBootstrapSettings()
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +118,7 @@ func (page *SettingsPage) updateButtons() {
 }
 
 func (page *SettingsPage) persist() bool {
-	if err := page.settings.Save(page.path); err != nil {
+	if err := manager.IPCClientSaveBootstrapSettings(page.settings); err != nil {
 		page.status.SetText(l18n.Sprintf("Unable to save bootstrap DNS settings: %v", err))
 		return false
 	}

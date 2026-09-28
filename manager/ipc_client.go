@@ -11,6 +11,7 @@ import (
 	"os"
 	"sync"
 
+	"golang.zx2c4.com/wireguard/windows/bootstrap"
 	"golang.zx2c4.com/wireguard/windows/conf"
 	"golang.zx2c4.com/wireguard/windows/updater"
 )
@@ -55,6 +56,8 @@ const (
 	QuitMethodType
 	UpdateStateMethodType
 	UpdateMethodType
+	BootstrapSettingsMethodType
+	SaveBootstrapSettingsMethodType
 )
 
 var (
@@ -454,6 +457,34 @@ func IPCClientUpdate() error {
 	defer rpcMutex.Unlock()
 
 	return rpcEncoder.Encode(UpdateMethodType)
+}
+
+func IPCClientBootstrapSettings() (settings bootstrap.Settings, err error) {
+	rpcMutex.Lock()
+	defer rpcMutex.Unlock()
+
+	if err = rpcEncoder.Encode(BootstrapSettingsMethodType); err != nil {
+		return
+	}
+	err = rpcDecoder.Decode(&settings)
+	if err != nil {
+		return
+	}
+	err = rpcDecodeError()
+	return
+}
+
+func IPCClientSaveBootstrapSettings(settings bootstrap.Settings) error {
+	rpcMutex.Lock()
+	defer rpcMutex.Unlock()
+
+	if err := rpcEncoder.Encode(SaveBootstrapSettingsMethodType); err != nil {
+		return err
+	}
+	if err := rpcEncoder.Encode(settings); err != nil {
+		return err
+	}
+	return rpcDecodeError()
 }
 
 func IPCClientRegisterTunnelChange(cb func(tunnel *Tunnel, state, globalState TunnelState, err error)) *TunnelChangeCallback {

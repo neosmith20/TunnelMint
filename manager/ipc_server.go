@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 
+	"golang.zx2c4.com/wireguard/windows/bootstrap"
 	"golang.zx2c4.com/wireguard/windows/conf"
 	"golang.zx2c4.com/wireguard/windows/updater"
 )
@@ -35,6 +37,33 @@ type ManagerService struct {
 	events        *os.File
 	eventLock     sync.Mutex
 	elevatedToken windows.Token
+}
+
+func bootstrapSettingsPath() (string, error) {
+	root, err := conf.RootDirectory(true)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(root, "bootstrap-dns.json"), nil
+}
+
+func (s *ManagerService) BootstrapSettings() (bootstrap.Settings, error) {
+	path, err := bootstrapSettingsPath()
+	if err != nil {
+		return bootstrap.Settings{}, err
+	}
+	return bootstrap.Load(path)
+}
+
+func (s *ManagerService) SaveBootstrapSettings(settings bootstrap.Settings) error {
+	if err := settings.Validate(); err != nil {
+		return err
+	}
+	path, err := bootstrapSettingsPath()
+	if err != nil {
+		return err
+	}
+	return settings.Save(path)
 }
 
 func (s *ManagerService) StoredConfig(tunnelName string) (*conf.Config, error) {
@@ -426,6 +455,27 @@ func (s *ManagerService) ServeConn(reader io.Reader, writer io.Writer) {
 			}
 		case UpdateMethodType:
 			s.Update()
+		case BootstrapSettingsMethodType:
+			settings, retErr := s.BootstrapSettings()
+			err = encoder.Encode(settings)
+			if err != nil {
+				return
+			}
+			err = encoder.Encode(errToString(retErr))
+			if err != nil {
+				return
+			}
+		case SaveBootstrapSettingsMethodType:
+			var settings bootstrap.Settings
+			err := decoder.Decode(&settings)
+			if err != nil {
+				return
+			}
+			retErr := s.SaveBootstrapSettings(settings)
+			err = encoder.Encode(errToString(retErr))
+			if err != nil {
+				return
+			}
 		default:
 			return
 		}

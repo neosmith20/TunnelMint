@@ -120,7 +120,7 @@ func TestSelectRouteCandidatesFiltersUnsafeAndDeduplicates(t *testing.T) {
 
 func TestRefreshReplacesOwnedRoutesAndProxy(t *testing.T) {
 	var added, deleted []string
-	var proxies int
+	var swaps int
 	hooks := Hooks{
 		Bootstrap: func(context.Context, string) ([]netip.Addr, error) {
 			return []netip.Addr{netip.MustParseAddr("192.0.2.1")}, nil
@@ -135,8 +135,11 @@ func TestRefreshReplacesOwnedRoutesAndProxy(t *testing.T) {
 		},
 		Verify: func(context.Context, string, []netip.Addr) error { return nil },
 		StartProxy: func(context.Context, string, []netip.Addr) (io.Closer, error) {
-			proxies++
 			return closeFunc(func() error { return nil }), nil
+		},
+		ReplaceProxy: func(context.Context, string, []netip.Addr, io.Closer) error {
+			swaps++
+			return nil
 		},
 		SetDNS: func() (func() error, error) { return func() error { return nil }, nil },
 	}
@@ -147,8 +150,8 @@ func TestRefreshReplacesOwnedRoutesAndProxy(t *testing.T) {
 	if err := s.Refresh(context.Background(), []netip.Addr{netip.MustParseAddr("192.0.2.2")}); err != nil {
 		t.Fatal(err)
 	}
-	if proxies != 2 {
-		t.Fatalf("proxy starts = %d, want 2", proxies)
+	if swaps != 1 {
+		t.Fatalf("proxy swaps = %d, want 1", swaps)
 	}
 	if !reflect.DeepEqual(added, []string{"192.0.2.1/32", "192.0.2.2/32"}) {
 		t.Fatalf("added routes = %v", added)

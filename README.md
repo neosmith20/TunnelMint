@@ -24,11 +24,11 @@ TunnelMint will also understand a DoH endpoint directly:
 DNS = https://dns.example.com/dns-query
 ```
 
-TunnelMint will detect the HTTPS endpoint, bootstrap it automatically, and send the encrypted DNS traffic through the active tunnel.
+TunnelMint detects the HTTPS endpoint, bootstraps it automatically, and sends encrypted DNS traffic through the active tunnel. The implementation is still alpha software and awaits owner testing on an elevated Windows system with real tunnel peers.
 
 No separate `EncryptedDNS=true` switch. No unnecessary configuration maze.
 
-## Planned v1 Features
+## Windows v1 scope
 
 - Windows-first client
 - Familiar, simple tunnel workflow
@@ -46,7 +46,7 @@ No separate `EncryptedDNS=true` switch. No unnecessary configuration maze.
 
 Encrypted DNS endpoints use hostnames, so TunnelMint may need a traditional DNS resolver briefly to locate the DoH endpoint before encrypted DNS is available.
 
-TunnelMint is planned to ship with multiple bootstrap resolvers for reliability, while allowing users to change, disable, reorder, or replace them in **Settings**.
+TunnelMint ships with multiple bootstrap resolvers for reliability, while allowing users to change, disable, reorder, or replace them in **Settings**.
 
 Bootstrap DNS is only intended to locate the encrypted DNS endpoint. Normal DNS queries should then use the configured encrypted resolver.
 
@@ -65,16 +65,16 @@ Advanced networking details belong inside the software whenever they can be hand
 
 ## Project Status
 
-> **Very early development.**
+> **Alpha/development software.**
 
-TunnelMint is not currently ready for production use. The initial Windows client and encrypted DNS functionality have not yet been implemented.
+TunnelMint is not currently ready for production use. Automated tests and reproducible development builds pass, while real Windows install/coexistence, service, packet-leak, sleep/wake, IPv6, and real-peer acceptance remain owner verification items.
 
 See [ROADMAP.md](ROADMAP.md) for the initial development plan.
 
 ## Project Policies
 
 - [Contributing](CONTRIBUTING.md)
-- [Contributor Copyright Assignment](CONTRIBUTOR_COPYRIGHT_ASSIGNMENT.md)
+- [Contributor License Agreement](CONTRIBUTOR_LICENSE_AGREEMENT.md)
 - [Security Policy](SECURITY.md)
 - [Support](SUPPORT.md)
 - [Privacy](PRIVACY.md)

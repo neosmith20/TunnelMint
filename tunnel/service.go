@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/netip"
 	"os"
 	"runtime"
 	"time"
@@ -39,6 +40,7 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 	var luid winipcfg.LUID
 	var config *conf.Config
 	var encryptedDNSSession *dohruntime.Session
+	var configuredBootstrap []netip.Addr
 	var err error
 	serviceError := services.ErrorSuccess
 
@@ -195,7 +197,14 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 		return
 	}
 
-	err = enableFirewall(config, luid, encryptedDNSConfigured(config))
+	if encryptedDNSConfigured(config) {
+		configuredBootstrap, err = configuredBootstrapResolvers()
+		if err != nil {
+			serviceError = services.ErrorSetNetConfig
+			return
+		}
+	}
+	err = enableFirewall(config, luid, encryptedDNSConfigured(config), configuredBootstrap)
 	if err != nil {
 		serviceError = services.ErrorFirewall
 		return
@@ -222,7 +231,7 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 	watcher.Configure(adapter, config, luid)
 
 	log.Println("Starting encrypted DNS runtime")
-	encryptedDNSSession, err = activateEncryptedDNS(context.Background(), config, luid)
+	encryptedDNSSession, err = activateEncryptedDNS(context.Background(), config, luid, adapter, configuredBootstrap)
 	if err != nil {
 		serviceError = services.ErrorSetNetConfig
 		return

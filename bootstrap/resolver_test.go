@@ -101,6 +101,32 @@ func TestResolveEndpointTimeout(t *testing.T) {
 	}
 }
 
+func TestResolveEndpointTimeoutThenLaterResolverSucceeds(t *testing.T) {
+	first := netip.MustParseAddr("192.0.2.1")
+	second := netip.MustParseAddr("192.0.2.2")
+	resolver := NewResolver([]netip.Addr{first, second})
+	resolver.Timeout = 80 * time.Millisecond
+	var calls []netip.Addr
+	resolver.Lookup = func(ctx context.Context, server netip.Addr, _ string) ([]netip.Addr, error) {
+		calls = append(calls, server)
+		if server == first {
+			<-ctx.Done()
+			return nil, ctx.Err()
+		}
+		return []netip.Addr{netip.MustParseAddr("198.51.100.20")}, nil
+	}
+	addresses, err := resolver.ResolveEndpoint(context.Background(), "https://dns.example.test/dns-query")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(calls) != 2 || calls[0] != first || calls[1] != second {
+		t.Fatalf("resolver call order = %v", calls)
+	}
+	if len(addresses) != 1 || addresses[0].String() != "198.51.100.20" {
+		t.Fatalf("addresses = %v", addresses)
+	}
+}
+
 func TestEndpointCacheHitAndInvalidation(t *testing.T) {
 	resolver := NewResolver([]netip.Addr{netip.MustParseAddr("192.0.2.1")})
 	resolver.Cache = NewCache(time.Minute, 4)
