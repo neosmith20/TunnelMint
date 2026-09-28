@@ -185,6 +185,7 @@ func TestDNSURLValidation(t *testing.T) {
 		want  string
 	}{
 		{name: "missing host", value: "https://", want: "Invalid DNS URL"},
+		{name: "missing hostname", value: "https://:443/dns-query", want: "Invalid DNS URL"},
 		{name: "invalid host", value: "https://dns example/dns-query", want: "Invalid DNS URL"},
 		{name: "http", value: "http://dns.example.com/dns-query", want: "Unsupported DNS URL scheme"},
 		{name: "dot", value: "tls://dns.example.com", want: "Unsupported DNS URL scheme"},

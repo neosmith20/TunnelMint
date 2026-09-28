@@ -136,7 +136,7 @@ func parseDNS(s string) (netip.Addr, string, error) {
 	if !strings.EqualFold(parsed.Scheme, "https") {
 		return netip.Addr{}, "", &ParseError{l18n.Sprintf("Unsupported DNS URL scheme"), parsed.Scheme}
 	}
-	if parsed.Host == "" {
+	if parsed.Hostname() == "" {
 		return netip.Addr{}, "", &ParseError{l18n.Sprintf("Invalid DNS URL"), s}
 	}
 	return netip.Addr{}, s, nil
