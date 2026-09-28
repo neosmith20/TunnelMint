@@ -1,0 +1,171 @@
+/* SPDX-License-Identifier: MIT
+ *
+ * Copyright (C) 2026 TunnelMint contributors. All Rights Reserved.
+ */
+
+package doh
+
+import (
+	"context"
+	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+)
+
+var testDNSQuery = []byte{0x12, 0x34, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 0x00, 0x00, 0x01, 0x00, 0x01}
+var testDNSResponse = []byte{0x12, 0x34, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01}
+
+func newTLSServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *http.Client) {
+	t.Helper()
+	server := httptest.NewTLSServer(handler)
+	t.Cleanup(server.Close)
+	return server, server.Client()
+}
+
+func TestQueryPOSTHeadersAndPath(t *testing.T) {
+	const path = "/dns-query/provider/client-id"
+	server, client := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %q, want POST", r.Method)
+		}
+		if r.URL.Path != path {
+			t.Errorf("path = %q, want %q", r.URL.Path, path)
+		}
+		if got := r.Header.Get("Content-Type"); got != "application/dns-message" {
+			t.Errorf("Content-Type = %q", got)
+		}
+		if got := r.Header.Get("Accept"); got != "application/dns-message" {
+			t.Errorf("Accept = %q", got)
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Error(err)
+		}
+		if string(body) != string(testDNSQuery) {
+			t.Errorf("query body = %x, want %x", body, testDNSQuery)
+		}
+		w.Header().Set("Content-Type", "application/dns-message")
+		_, _ = w.Write(testDNSResponse)
+	})
+
+	doh, err := NewClient(server.URL+path, Options{HTTPClient: client})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := doh.Query(context.Background(), testDNSQuery)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(response) != string(testDNSResponse) {
+		t.Errorf("response = %x, want %x", response, testDNSResponse)
+	}
+}
+
+func TestQueryRejectsHTTPStatusAndContentType(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		status      int
+		contentType string
+	}{
+		{name: "status", status: http.StatusBadGateway, contentType: "application/dns-message"},
+		{name: "content type", status: http.StatusOK, contentType: "text/plain"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server, client := newTLSServer(t, func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", test.contentType)
+				w.WriteHeader(test.status)
+				_, _ = w.Write([]byte("not a DNS response"))
+			})
+			doh, err := NewClient(server.URL, Options{HTTPClient: client})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := doh.Query(context.Background(), testDNSQuery); err == nil {
+				t.Fatal("expected query to fail")
+			}
+		})
+	}
+}
+
+func TestQueryTimeoutAndCancellation(t *testing.T) {
+	server, client := newTLSServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		time.Sleep(200 * time.Millisecond)
+		w.Header().Set("Content-Type", "application/dns-message")
+		_, _ = w.Write(testDNSResponse)
+	})
+	doh, err := NewClient(server.URL, Options{HTTPClient: client, Timeout: 25 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = doh.Query(context.Background(), testDNSQuery)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("timeout error = %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err = doh.Query(ctx, testDNSQuery)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancellation error = %v", err)
+	}
+}
+
+func TestQueryRejectsUntrustedTLS(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/dns-message")
+		_, _ = w.Write(testDNSResponse)
+	}))
+	defer server.Close()
+	doh, err := NewClient(server.URL, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := doh.Query(context.Background(), testDNSQuery); err == nil {
+		t.Fatal("expected untrusted TLS certificate to fail")
+	}
+}
+
+func TestQueryRejectsHTTPSRedirect(t *testing.T) {
+	plaintext := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/dns-message")
+		_, _ = w.Write(testDNSResponse)
+	}))
+	defer plaintext.Close()
+	tlsServer, client := newTLSServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Location", plaintext.URL)
+		w.WriteHeader(http.StatusFound)
+	})
+	doh, err := NewClient(tlsServer.URL, Options{HTTPClient: client})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := doh.Query(context.Background(), testDNSQuery); err == nil || !strings.Contains(err.Error(), "HTTP status 302") {
+		t.Fatalf("redirect error = %v", err)
+	}
+}
+
+func TestQueryRejectsOversizedResponse(t *testing.T) {
+	server, client := newTLSServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/dns-message")
+		_, _ = w.Write([]byte("0123456789"))
+	})
+	doh, err := NewClient(server.URL, Options{HTTPClient: client, MaxResponseSize: 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := doh.Query(context.Background(), testDNSQuery); err == nil || !strings.Contains(err.Error(), "exceeds 4 bytes") {
+		t.Fatalf("oversized response error = %v", err)
+	}
+}
+
+func TestNewClientValidatesEndpoint(t *testing.T) {
+	for _, endpoint := range []string{"http://dns.example.com/dns-query", "https://", "https://:443/dns-query"} {
+		if _, err := NewClient(endpoint, Options{}); err == nil {
+			t.Errorf("NewClient(%q) unexpectedly succeeded", endpoint)
+		}
+	}
+}

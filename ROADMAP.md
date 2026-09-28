@@ -23,8 +23,8 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 
 ## Phase 2 — Encrypted DNS Engine
 
-- [ ] Implement DoH request and response handling.
-- [ ] Validate TLS certificates normally and securely.
+- [x] Implement DoH request and response handling.
+- [x] Validate TLS certificates normally and securely.
 - [ ] Implement automatic hostname bootstrap.
 - [ ] Ship multiple sensible bootstrap resolvers for reliability.
 - [ ] Ensure bootstrap is used only to locate the encrypted DNS endpoint.
