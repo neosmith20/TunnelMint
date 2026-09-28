@@ -22,12 +22,16 @@ func Version() string {
 	panic("")
 }
 
-func CAST(string, func() error) {
-	panic("")
+func CAST(name string, test func() error) {
+	if err := test(); err != nil {
+		panic(name + ": " + err.Error())
+	}
 }
 
-func PCT(string, func() error) {
-	panic("")
+func PCT(name string, test func() error) {
+	if err := test(); err != nil {
+		panic(name + ": " + err.Error())
+	}
 }
 
 func RecordApproved() {}

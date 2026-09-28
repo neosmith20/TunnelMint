@@ -37,6 +37,10 @@ jobs:
         shell: cmd
         run: cmd /c build.bat
 
+      - name: Smoke test built client startup
+        shell: cmd
+        run: amd64\tunnelmint.exe /update
+
       # Installer linking depends on the Windows Installer ICE service and is
       # kept as a separate release-build step until GitHub-hosted runners offer
       # a deterministic ICE environment.
