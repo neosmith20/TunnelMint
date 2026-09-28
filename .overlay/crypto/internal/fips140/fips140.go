@@ -22,13 +22,13 @@ func Version() string {
 	panic("")
 }
 
-func CAST(string, func() error) {
-	panic("")
-}
+// CAST matches the disabled-FIPS behavior of Go 1.27.1: self-tests are not
+// run when FIPS is disabled.
+func CAST(string, func() error) {}
 
-func PCT(string, func() error) {
-	panic("")
-}
+// PCT matches the disabled-FIPS behavior of Go 1.27.1: self-tests are not
+// run when FIPS is disabled.
+func PCT(string, func() error) {}
 
 func RecordApproved() {}
 
