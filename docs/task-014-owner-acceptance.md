@@ -186,4 +186,24 @@ acceptance remains blocked until the fixed amd64 MSI is built and installed by
 the owner from an Administrator desktop session, then the same DoH test is
 repeated.
 
+## DoH endpoint candidate failover regression
+
+After the TLS-panic fix was installed, the owner repeated the DoH activation.
+TLS no longer panicked, but the bounded DoH verification request timed out and
+the tunnel correctly shut down rather than falling back to plaintext DNS. The
+result is an activation failure, not a DoH acceptance pass.
+
+The transport had a candidate failover defect: it passed the whole request
+deadline to the first bootstrapped endpoint address. If that address is not
+reachable over the configured tunnel family, a later reachable candidate never
+gets a dial attempt. The focused pending fix divides the existing request
+deadline among remaining candidates, while retaining the same overall timeout,
+endpoint hostname, HTTPS certificate validation, and fail-closed behavior. A
+deterministic test makes the first candidate time out and verifies that the
+second is tried; both normal and production-overlay `doh` tests pass. The
+three Windows client architectures rebuilt successfully.
+
+This remains unverified on the live VM until a newly packaged and installed
+amd64 MSI repeats the owner DoH activation successfully.
+
 No beta-readiness or production-readiness claim is made.

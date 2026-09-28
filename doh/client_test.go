@@ -9,8 +9,10 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"testing"
 	"time"
@@ -111,6 +113,39 @@ func TestQueryTimeoutAndCancellation(t *testing.T) {
 	_, err = doh.Query(ctx, testDNSQuery)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancellation error = %v", err)
+	}
+}
+
+func TestDialBootstrappedAddressesFallsBackWithinRequestDeadline(t *testing.T) {
+	first := netip.MustParseAddr("2001:db8::1")
+	second := netip.MustParseAddr("192.0.2.1")
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	var calls []netip.Addr
+	conn, err := dialBootstrappedAddresses(ctx, "tcp", "443", []netip.Addr{first, second}, func(ctx context.Context, _ string, address string) (net.Conn, error) {
+		host, _, splitErr := net.SplitHostPort(address)
+		if splitErr != nil {
+			return nil, splitErr
+		}
+		candidate, parseErr := netip.ParseAddr(host)
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		calls = append(calls, candidate)
+		if candidate == first {
+			<-ctx.Done()
+			return nil, ctx.Err()
+		}
+		client, server := net.Pipe()
+		server.Close()
+		return client, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if len(calls) != 2 || calls[0] != first || calls[1] != second {
+		t.Fatalf("dial candidates = %v, want [%v %v]", calls, first, second)
 	}
 }
 

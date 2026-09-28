@@ -104,21 +104,47 @@ func NewHTTPClientForAddresses(addresses []netip.Addr, base *http.Client) *http.
 		if err != nil {
 			port = "443"
 		}
-		if len(addresses) == 0 {
-			return nil, fmt.Errorf("no bootstrapped endpoint addresses available")
-		}
-		var lastErr error
-		for _, candidate := range addresses {
-			conn, err := (&net.Dialer{}).DialContext(ctx, network, net.JoinHostPort(candidate.String(), port))
-			if err == nil {
-				return conn, nil
-			}
-			lastErr = err
-		}
-		return nil, fmt.Errorf("unable to dial bootstrapped endpoint: %w", lastErr)
+		return dialBootstrappedAddresses(ctx, network, port, addresses, (&net.Dialer{}).DialContext)
 	}
 	client.Transport = transport
 	return client
+}
+
+// dialBootstrappedAddresses gives every endpoint candidate an opportunity to
+// connect within the request's existing deadline. Without per-candidate
+// budgets, an unavailable IPv6 address can consume the whole deadline before
+// a reachable IPv4 address is attempted.
+func dialBootstrappedAddresses(ctx context.Context, network, port string, addresses []netip.Addr, dial func(context.Context, string, string) (net.Conn, error)) (net.Conn, error) {
+	if len(addresses) == 0 {
+		return nil, fmt.Errorf("no bootstrapped endpoint addresses available")
+	}
+	deadline, hasDeadline := ctx.Deadline()
+	var lastErr error
+	for index, candidate := range addresses {
+		attemptCtx := ctx
+		cancel := func() {}
+		if hasDeadline {
+			remaining := len(addresses) - index
+			budget := time.Until(deadline) / time.Duration(remaining)
+			if budget <= 0 {
+				break
+			}
+			attemptCtx, cancel = context.WithTimeout(ctx, budget)
+		}
+		conn, err := dial(attemptCtx, network, net.JoinHostPort(candidate.String(), port))
+		cancel()
+		if err == nil {
+			return conn, nil
+		}
+		lastErr = err
+		if ctx.Err() != nil {
+			break
+		}
+	}
+	if lastErr == nil {
+		lastErr = ctx.Err()
+	}
+	return nil, fmt.Errorf("unable to dial bootstrapped endpoint: %w", lastErr)
 }
 
 // Query sends query as a DNS-over-HTTPS POST and returns the raw DNS response.
