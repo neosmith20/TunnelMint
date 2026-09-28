@@ -18,6 +18,7 @@
 		".deps/go/src/crypto/internal/fips140/sha512/sha512block_arm64.go": ".overlay/crypto/internal/fips140/sha512/sha512block_arm64.go",
 		".deps/go/src/crypto/internal/fips140deps/cpu/cpu.go": ".overlay/crypto/internal/fips140deps/cpu/cpu.go",
 		".deps/go/src/crypto/internal/fips140only/fips140only.go": ".overlay/crypto/internal/fips140only/fips140only.go",
-		".deps/go/src/crypto/rand/rand.go": ".overlay/crypto/rand/rand.go"
+		".deps/go/src/crypto/rand/rand.go": ".overlay/crypto/rand/rand.go",
+		".deps/go/src/crypto/rand/util.go": ".overlay/crypto/rand/util.go"
 	}
 }
