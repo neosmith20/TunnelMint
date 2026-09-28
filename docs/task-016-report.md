@@ -31,7 +31,7 @@ The installer build completed, but WiX ICE validation remains environment-bound 
 
 ## GitHub Actions
 
-Pending after push; the report will be updated with the Windows validation run URL and conclusion.
+Windows validation passed on the pushed branch: [run 36386235313](https://github.com/neosmith20/TunnelMint/actions/runs/36386235313). The focused workflow includes the Task 016 parser and `ResolveEndpointsWith` tests. The separate repository-managed Code scanning AI findings run failed in its external processing step; it did not report a source finding and is outside the supported Windows validation workflow.
 
 ## Remaining limits
 
