@@ -25,10 +25,10 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 
 - [x] Implement DoH request and response handling.
 - [x] Validate TLS certificates normally and securely.
-- [ ] Implement automatic hostname bootstrap.
-- [ ] Ship multiple sensible bootstrap resolvers for reliability.
-- [ ] Ensure bootstrap is used only to locate the encrypted DNS endpoint.
-- [ ] Cache endpoint information where safe and useful.
+- [x] Implement automatic hostname bootstrap.
+- [x] Ship multiple sensible bootstrap resolvers for reliability.
+- [x] Ensure bootstrap is used only to locate the encrypted DNS endpoint.
+- [x] Cache endpoint information where safe and useful.
 
 **Exit criteria:** A configured DoH endpoint can be reached reliably and DNS queries can be resolved through it.
 

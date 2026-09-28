@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"io"
 	"mime"
+	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strings"
 	"time"
@@ -76,6 +78,47 @@ func NewClient(endpoint string, options Options) (*Client, error) {
 		timeout:         timeout,
 		maxResponseSize: maxResponseSize,
 	}, nil
+}
+
+// NewHTTPClientForAddresses returns an HTTP client whose TCP connections use
+// only the supplied IP addresses. The request URL remains unchanged, so the
+// HTTP Host header and TLS ServerName continue to use the configured endpoint
+// hostname. A base client may supply trusted test roots or other transport
+// settings; its transport is cloned before the dial path is replaced.
+func NewHTTPClientForAddresses(addresses []netip.Addr, base *http.Client) *http.Client {
+	client := &http.Client{}
+	if base != nil {
+		*client = *base
+	}
+	transport, ok := client.Transport.(*http.Transport)
+	if ok {
+		transport = transport.Clone()
+	} else if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
+		transport = defaultTransport.Clone()
+	} else {
+		transport = &http.Transport{}
+	}
+	transport.Proxy = nil
+	transport.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
+		_, port, err := net.SplitHostPort(address)
+		if err != nil {
+			port = "443"
+		}
+		if len(addresses) == 0 {
+			return nil, fmt.Errorf("no bootstrapped endpoint addresses available")
+		}
+		var lastErr error
+		for _, candidate := range addresses {
+			conn, err := (&net.Dialer{}).DialContext(ctx, network, net.JoinHostPort(candidate.String(), port))
+			if err == nil {
+				return conn, nil
+			}
+			lastErr = err
+		}
+		return nil, fmt.Errorf("unable to dial bootstrapped endpoint: %w", lastErr)
+	}
+	client.Transport = transport
+	return client
 }
 
 // Query sends query as a DNS-over-HTTPS POST and returns the raw DNS response.
