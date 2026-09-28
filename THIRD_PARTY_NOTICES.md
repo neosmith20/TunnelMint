@@ -16,4 +16,14 @@ When third-party source code, binaries, libraries, drivers, or other components 
 
 TunnelMint uses WireGuard as its underlying VPN tunnel technology. Any WireGuard-derived code or distributed WireGuard components included in TunnelMint remain subject to their applicable upstream copyright and license notices.
 
-The exact notices for incorporated components will be added here when those components are introduced into the repository and release packages.
+The Windows tunnel foundation is incorporated from the official
+`wireguard-windows` repository at commit
+`6ece77bc487c8aa697e3c092197621c4f3e5ccb8`:
+
+- Source: https://github.com/WireGuard/wireguard-windows
+- License: MIT
+- Required notice: [WIREGUARD-COPYING](WIREGUARD-COPYING)
+- Upstream documentation: [wireguard-windows-upstream-README.md](docs/wireguard-windows-upstream-README.md)
+- Build/provenance record: [docs/windows-baseline.md](docs/windows-baseline.md)
+
+Upstream source files retain their original copyright and SPDX headers.
