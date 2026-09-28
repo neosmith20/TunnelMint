@@ -186,3 +186,173 @@ func TestFinalizeFailureRollsBackDNSProxyAndRoutes(t *testing.T) {
 		t.Fatalf("rollback state restored=%v closed=%v deleted=%v", restored, closed, deleted)
 	}
 }
+
+func TestRefreshRouteAddFailureKeepsOldState(t *testing.T) {
+	oldPrefix := netip.MustParsePrefix("192.0.2.1/32")
+	newPrefix := netip.MustParsePrefix("192.0.2.2/32")
+	var swaps int
+	hooks := Hooks{
+		Bootstrap: func(context.Context, string) ([]netip.Addr, error) { return []netip.Addr{oldPrefix.Addr()}, nil },
+		AddRoute: func(prefix netip.Prefix) (bool, error) {
+			if prefix == newPrefix {
+				return false, errors.New("injected route add failure")
+			}
+			return true, nil
+		},
+		DelRoute: func(netip.Prefix) error { return nil },
+		Verify:   func(context.Context, string, []netip.Addr) error { return nil },
+		StartProxy: func(context.Context, string, []netip.Addr) (io.Closer, error) {
+			return closeFunc(func() error { return nil }), nil
+		},
+		ReplaceProxy: func(context.Context, string, []netip.Addr, io.Closer) error {
+			swaps++
+			return nil
+		},
+		SetDNS: func() (func() error, error) { return func() error { return nil }, nil },
+	}
+	s, err := Activate(context.Background(), Config{Endpoint: "https://dns.example/dns-query"}, hooks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Refresh(context.Background(), []netip.Addr{newPrefix.Addr()}); err == nil {
+		t.Fatal("route add failure unexpectedly succeeded")
+	}
+	if swaps != 0 || !reflect.DeepEqual(s.Routes(), []netip.Prefix{oldPrefix}) {
+		t.Fatalf("failed refresh changed state: swaps=%d routes=%v", swaps, s.Routes())
+	}
+	_ = s.Close()
+}
+
+func TestRefreshVerificationAndProxyFailuresKeepOldState(t *testing.T) {
+	oldPrefix := netip.MustParsePrefix("192.0.2.1/32")
+	newPrefix := netip.MustParsePrefix("192.0.2.2/32")
+	verifyErr := errors.New("injected verification failure")
+	proxyErr := errors.New("injected proxy swap failure")
+	var failVerify, swaps int
+	hooks := Hooks{
+		Bootstrap: func(context.Context, string) ([]netip.Addr, error) { return []netip.Addr{oldPrefix.Addr()}, nil },
+		AddRoute:  func(netip.Prefix) (bool, error) { return true, nil },
+		DelRoute:  func(netip.Prefix) error { return nil },
+		Verify: func(context.Context, string, []netip.Addr) error {
+			if failVerify != 0 {
+				return verifyErr
+			}
+			return nil
+		},
+		StartProxy: func(context.Context, string, []netip.Addr) (io.Closer, error) {
+			return closeFunc(func() error { return nil }), nil
+		},
+		ReplaceProxy: func(context.Context, string, []netip.Addr, io.Closer) error {
+			swaps++
+			return proxyErr
+		},
+		SetDNS: func() (func() error, error) { return func() error { return nil }, nil },
+	}
+	s, err := Activate(context.Background(), Config{Endpoint: "https://dns.example/dns-query"}, hooks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	failVerify = 1
+	if err := s.Refresh(context.Background(), []netip.Addr{newPrefix.Addr()}); err == nil || !errors.Is(err, verifyErr) {
+		t.Fatalf("verification error = %v", err)
+	}
+	if swaps != 0 || !reflect.DeepEqual(s.Routes(), []netip.Prefix{oldPrefix}) {
+		t.Fatalf("verification failure changed state: swaps=%d routes=%v", swaps, s.Routes())
+	}
+	failVerify = 0
+	if err := s.Refresh(context.Background(), []netip.Addr{newPrefix.Addr()}); err == nil || !errors.Is(err, proxyErr) {
+		t.Fatalf("proxy error = %v", err)
+	}
+	if swaps != 1 || !reflect.DeepEqual(s.Routes(), []netip.Prefix{oldPrefix}) {
+		t.Fatalf("proxy failure changed state: swaps=%d routes=%v", swaps, s.Routes())
+	}
+	_ = s.Close()
+}
+
+func TestRefreshStaleCleanupFailureCommitsConsistentOwnership(t *testing.T) {
+	oldPrefix := netip.MustParsePrefix("192.0.2.1/32")
+	newPrefix := netip.MustParsePrefix("192.0.2.2/32")
+	removeErr := errors.New("injected stale route cleanup failure")
+	var failRemoval bool
+	hooks := Hooks{
+		Bootstrap: func(context.Context, string) ([]netip.Addr, error) { return []netip.Addr{oldPrefix.Addr()}, nil },
+		AddRoute:  func(netip.Prefix) (bool, error) { return true, nil },
+		DelRoute: func(prefix netip.Prefix) error {
+			if failRemoval && prefix == oldPrefix {
+				return removeErr
+			}
+			return nil
+		},
+		Verify: func(context.Context, string, []netip.Addr) error { return nil },
+		StartProxy: func(context.Context, string, []netip.Addr) (io.Closer, error) {
+			return closeFunc(func() error { return nil }), nil
+		},
+		ReplaceProxy: func(context.Context, string, []netip.Addr, io.Closer) error { return nil },
+		SetDNS:       func() (func() error, error) { return func() error { return nil }, nil },
+	}
+	s, err := Activate(context.Background(), Config{Endpoint: "https://dns.example/dns-query"}, hooks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	failRemoval = true
+	if err := s.Refresh(context.Background(), []netip.Addr{newPrefix.Addr()}); err == nil || !errors.Is(err, removeErr) {
+		t.Fatalf("cleanup error = %v", err)
+	}
+	if got := s.Routes(); !reflect.DeepEqual(got, []netip.Prefix{newPrefix, oldPrefix}) {
+		t.Fatalf("routes after cleanup failure = %v", got)
+	}
+	failRemoval = false
+	if err := s.Refresh(context.Background(), []netip.Addr{newPrefix.Addr()}); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.Routes(); !reflect.DeepEqual(got, []netip.Prefix{newPrefix}) {
+		t.Fatalf("routes after retry = %v", got)
+	}
+	_ = s.Close()
+}
+
+func TestRecoverReappliesRuntimeState(t *testing.T) {
+	endpoint := "https://dns.example/dns-query"
+	address := netip.MustParseAddr("192.0.2.1")
+	var events []string
+	hooks := Hooks{
+		Bootstrap: func(context.Context, string) ([]netip.Addr, error) { return []netip.Addr{address}, nil },
+		AddRoute: func(prefix netip.Prefix) (bool, error) {
+			events = append(events, "route:"+prefix.String())
+			return true, nil
+		},
+		DelRoute: func(netip.Prefix) error { return nil },
+		Verify: func(context.Context, string, []netip.Addr) error {
+			events = append(events, "verify")
+			return nil
+		},
+		StartProxy: func(context.Context, string, []netip.Addr) (io.Closer, error) {
+			return closeFunc(func() error { return nil }), nil
+		},
+		ReplaceProxy: func(context.Context, string, []netip.Addr, io.Closer) error {
+			events = append(events, "proxy")
+			return nil
+		},
+		SetDNS: func() (func() error, error) { return func() error { return nil }, nil },
+		ReapplyDNS: func() error {
+			events = append(events, "dns")
+			return nil
+		},
+		Finalize: func() error {
+			events = append(events, "finalize")
+			return nil
+		},
+	}
+	s, err := Activate(context.Background(), Config{Endpoint: endpoint}, hooks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	events = nil
+	if err := s.Recover(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"route:192.0.2.1/32", "verify", "proxy", "dns", "finalize"}; !reflect.DeepEqual(events, want) {
+		t.Fatalf("recovery events = %v, want %v", events, want)
+	}
+	_ = s.Close()
+}
