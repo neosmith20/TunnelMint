@@ -178,6 +178,37 @@ func TestDNSRoundTripPreservesDoH(t *testing.T) {
 	equal(t, serialized, reparsed.ToWgQuick())
 }
 
+func TestDNSRoundTripPreservesDoHWithSearchSuffix(t *testing.T) {
+	const endpoint = "https://dns.example.com/dns-query"
+	conf, err := FromWgQuick(dnsConfig(endpoint+", home.arpa"), "test")
+	if !noError(t, err) {
+		return
+	}
+	if !reflect.DeepEqual(conf.Interface.DNSSearch, []string{"home.arpa"}) {
+		t.Fatalf("search suffix = %v", conf.Interface.DNSSearch)
+	}
+	serialized := conf.ToWgQuick()
+	reparsed, err := FromWgQuick(serialized, "test")
+	if !noError(t, err) {
+		return
+	}
+	equal(t, serialized, reparsed.ToWgQuick())
+}
+
+func TestDNSRejectsMixedPlainAndDoH(t *testing.T) {
+	_, err := FromWgQuick(dnsConfig("1.1.1.1, https://dns.example.com/dns-query"), "test")
+	if err == nil || !strings.Contains(err.Error(), "DoH cannot be combined with plain DNS") {
+		t.Fatalf("mixed DNS configuration error = %v", err)
+	}
+}
+
+func TestDNSRejectsMultipleDoH(t *testing.T) {
+	_, err := FromWgQuick(dnsConfig("https://one.example/dns-query, https://two.example/dns-query"), "test")
+	if err == nil || !strings.Contains(err.Error(), "Multiple DoH endpoints are unsupported") {
+		t.Fatalf("multiple DoH configuration error = %v", err)
+	}
+}
+
 func TestDNSURLValidation(t *testing.T) {
 	for _, test := range []struct {
 		name  string

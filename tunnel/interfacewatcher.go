@@ -30,6 +30,16 @@ type interfaceWatcherEvent struct {
 	family winipcfg.AddressFamily
 }
 
+func reinitializeAdapter(setConfiguration, bringUp func() error) (services.Error, error) {
+	if err := setConfiguration(); err != nil {
+		return services.ErrorDeviceSetConfig, err
+	}
+	if err := bringUp(); err != nil {
+		return services.ErrorDeviceBringUp, err
+	}
+	return 0, nil
+}
+
 type interfaceWatcher struct {
 	errors  chan interfaceWatcherError
 	started chan winipcfg.AddressFamily
@@ -116,13 +126,13 @@ func watchInterface() (*interfaceWatcher, error) {
 
 		if state, err := iw.adapter.AdapterState(); err == nil && state == driver.AdapterStateDown {
 			log.Println("Reinitializing adapter configuration")
-			err = iw.adapter.SetConfiguration(iw.conf.ToDriverConfiguration())
+			serviceError, err := reinitializeAdapter(
+				func() error { return iw.adapter.SetConfiguration(iw.conf.ToDriverConfiguration()) },
+				func() error { return iw.adapter.SetAdapterState(driver.AdapterStateUp) },
+			)
 			if err != nil {
-				log.Println(fmt.Errorf("%v: %w", services.ErrorDeviceSetConfig, err))
-			}
-			err = iw.adapter.SetAdapterState(driver.AdapterStateUp)
-			if err != nil {
-				log.Println(fmt.Errorf("%v: %w", services.ErrorDeviceBringUp, err))
+				iw.errors <- interfaceWatcherError{serviceError, fmt.Errorf("%v: %w", serviceError, err)}
+				return
 			}
 		}
 		if iw.recover != nil {

@@ -31,7 +31,7 @@ jobs:
           # Privileged adapter, DPAPI, service, and storage tests stay out of
           # hosted CI because they require an installed/elevated Windows VM.
           go test -vet=off ./tunnel ./tunnel/firewall ./manager ./ui
-          go test -vet=off ./conf -run 'Test(DNSParsing|DNSRoundTripPreservesDoH|DNSURLValidation|FromWgQuick)$'
+          go test -vet=off ./conf -run 'Test(DNSParsing|DNSRoundTripPreservesDoH|DNSRoundTripPreservesDoHWithSearchSuffix|DNSRejectsMixedPlainAndDoH|DNSRejectsMultipleDoH|DNSURLValidation|FromWgQuick|ResolveEndpointsWith)'
 
       - name: Build Windows client
         shell: cmd

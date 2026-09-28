@@ -165,6 +165,25 @@ func (s *Session) Refresh(ctx context.Context, candidates []netip.Addr) error {
 	}
 	newRoutes := make([]netip.Prefix, 0, len(selected))
 	addedRoutes := make([]netip.Prefix, 0, len(selected))
+	rollbackAddedRoutes := func(primary error) error {
+		var cleanupErrs []error
+		var retained []netip.Prefix
+		for _, route := range addedRoutes {
+			if err := hooks.DelRoute(route); err != nil {
+				retained = append(retained, route)
+				cleanupErrs = append(cleanupErrs, fmt.Errorf("remove refreshed DoH host route %s: %w", route, err))
+			}
+		}
+		if len(retained) > 0 {
+			s.mu.Lock()
+			s.routes = append(append([]netip.Prefix(nil), oldRoutes...), retained...)
+			s.mu.Unlock()
+		}
+		if len(cleanupErrs) == 0 {
+			return primary
+		}
+		return errors.Join(primary, errors.Join(cleanupErrs...))
+	}
 	for _, address := range selected {
 		prefix := netip.PrefixFrom(address, address.BitLen())
 		if oldSet[prefix] {
@@ -174,10 +193,7 @@ func (s *Session) Refresh(ctx context.Context, candidates []netip.Addr) error {
 		}
 		owned, err := hooks.AddRoute(prefix)
 		if err != nil {
-			for _, added := range addedRoutes {
-				_ = hooks.DelRoute(added)
-			}
-			return fmt.Errorf("add refreshed DoH host route %s: %w", prefix, err)
+			return rollbackAddedRoutes(fmt.Errorf("add refreshed DoH host route %s: %w", prefix, err))
 		}
 		if owned {
 			newRoutes = append(newRoutes, prefix)
@@ -185,20 +201,10 @@ func (s *Session) Refresh(ctx context.Context, candidates []netip.Addr) error {
 		}
 	}
 	if err := hooks.Verify(ctx, endpoint, selected); err != nil {
-		for _, route := range newRoutes {
-			if !containsPrefix(oldRoutes, route) {
-				_ = hooks.DelRoute(route)
-			}
-		}
-		return fmt.Errorf("verify refreshed DoH transport: %w", err)
+		return rollbackAddedRoutes(fmt.Errorf("verify refreshed DoH transport: %w", err))
 	}
 	if err := hooks.ReplaceProxy(ctx, endpoint, selected, oldProxy); err != nil {
-		for _, route := range newRoutes {
-			if !containsPrefix(oldRoutes, route) {
-				_ = hooks.DelRoute(route)
-			}
-		}
-		return fmt.Errorf("refresh local DNS proxy: %w", err)
+		return rollbackAddedRoutes(fmt.Errorf("refresh local DNS proxy: %w", err))
 	}
 	var cleanupErrs []error
 	for route := range oldSet {
@@ -270,13 +276,13 @@ func (s *Session) Close() error {
 	s.opMu.Lock()
 	defer s.opMu.Unlock()
 	s.mu.Lock()
-	if s.closed {
+	if s.closed && len(s.routes) == 0 {
 		s.mu.Unlock()
 		return nil
 	}
 	s.closed = true
 	restore, proxy, delRoute, routes := s.restore, s.proxy, s.delRoute, append([]netip.Prefix(nil), s.routes...)
-	s.restore, s.proxy, s.delRoute, s.routes, s.addresses = nil, nil, nil, nil, nil
+	s.restore, s.proxy, s.routes, s.addresses = nil, nil, nil, nil
 	s.mu.Unlock()
 
 	var firstErr error
@@ -290,11 +296,23 @@ func (s *Session) Close() error {
 			firstErr = err
 		}
 	}
-	for i := len(routes) - 1; i >= 0; i-- {
-		if err := delRoute(routes[i]); err != nil && firstErr == nil {
-			firstErr = err
+	var retained []netip.Prefix
+	if delRoute != nil {
+		for i := len(routes) - 1; i >= 0; i-- {
+			if err := delRoute(routes[i]); err != nil {
+				retained = append(retained, routes[i])
+				if firstErr == nil {
+					firstErr = err
+				}
+			}
 		}
 	}
+	s.mu.Lock()
+	s.routes = retained
+	if len(retained) == 0 {
+		s.delRoute = nil
+	}
+	s.mu.Unlock()
 	return firstErr
 }
 

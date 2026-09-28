@@ -55,7 +55,7 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 		}
 	}
 	peerRoutes := newDoHPeerRouteManager(adapter, config)
-	ownedWindowsRoutes := make(map[netip.Prefix]bool)
+	ownedWindowsRoutes := newDoHRouteOwnership()
 	var client *doh.Client
 	hooks := dohruntime.Hooks{
 		Bootstrap: func(ctx context.Context, endpoint string) ([]netip.Addr, error) {
@@ -71,18 +71,18 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 				nextHop = netip.IPv6Unspecified()
 			}
 			if _, err := luid.Route(prefix, nextHop); err == nil {
-				ownedWindowsRoutes[prefix] = false
+				ownedWindowsRoutes.markExisting(prefix)
 				return peerOwned, nil
 			}
 			if err := luid.AddRoute(prefix, nextHop, 0); err != nil {
 				_ = peerRoutes.Delete(prefix)
 				if err == windows.ERROR_OBJECT_ALREADY_EXISTS {
-					ownedWindowsRoutes[prefix] = false
+					ownedWindowsRoutes.markExisting(prefix)
 					return peerOwned, nil
 				}
 				return false, err
 			}
-			ownedWindowsRoutes[prefix] = true
+			ownedWindowsRoutes.markCreated(prefix)
 			return true, nil
 		},
 		DelRoute: func(prefix netip.Prefix) error {
@@ -90,7 +90,7 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 			if prefix.Addr().Is6() {
 				nextHop = netip.IPv6Unspecified()
 			}
-			windowsOwned := ownedWindowsRoutes[prefix]
+			windowsOwned := ownedWindowsRoutes.existing(prefix)
 			if windowsOwned {
 				if err := luid.DeleteRoute(prefix, nextHop); err != nil && err != windows.ERROR_NOT_FOUND {
 					return err
@@ -104,7 +104,7 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 				}
 				return err
 			}
-			delete(ownedWindowsRoutes, prefix)
+			ownedWindowsRoutes.forget(prefix)
 			return nil
 		},
 		Verify: func(ctx context.Context, endpoint string, addresses []netip.Addr) error {

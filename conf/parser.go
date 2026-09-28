@@ -311,8 +311,17 @@ func FromWgQuick(s, name string) (*Config, error) {
 						return nil, err
 					}
 					if len(doh) != 0 {
+						if len(conf.Interface.DNS) != 0 {
+							return nil, &ParseError{l18n.Sprintf("DoH cannot be combined with plain DNS server addresses"), address}
+						}
+						if len(conf.Interface.DNSOverHTTPS) != 0 {
+							return nil, &ParseError{l18n.Sprintf("Multiple DoH endpoints are unsupported; configure exactly one"), address}
+						}
 						conf.Interface.DNSOverHTTPS = append(conf.Interface.DNSOverHTTPS, doh)
 					} else if a.IsValid() {
+						if len(conf.Interface.DNSOverHTTPS) != 0 {
+							return nil, &ParseError{l18n.Sprintf("DoH cannot be combined with plain DNS server addresses"), address}
+						}
 						conf.Interface.DNS = append(conf.Interface.DNS, a)
 					} else {
 						conf.Interface.DNSSearch = append(conf.Interface.DNSSearch, address)
