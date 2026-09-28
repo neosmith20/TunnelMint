@@ -69,12 +69,12 @@ Add a simple Settings area for bootstrap DNS.
 
 ## Phase 6 — Windows Release
 
-- [ ] Build a normal Windows installer.
+- [x] Build a normal Windows installer.
 - [ ] Verify install, upgrade, uninstall, reboot, sleep, and wake behavior.
 - [ ] Test network changes between Ethernet and Wi-Fi.
 - [ ] Test tunnel and encrypted DNS failure scenarios.
-- [ ] Verify no private keys, credentials, or test configurations are included in release artifacts.
-- [ ] Prepare release notes and known limitations.
+- [x] Verify no private keys, credentials, or test configurations are included in release artifacts.
+- [x] Prepare release notes and known limitations.
 
 **Exit criteria:** TunnelMint can be installed and used as normal end-user Windows software.
 
