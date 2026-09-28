@@ -28,9 +28,54 @@ function Add-CounterDelta {
     )
 
     foreach ($name in $Names) {
-        $Destination.sent += $After[$name].sent - $Before[$name].sent
-        $Destination.received += $After[$name].received - $Before[$name].received
+        $Destination['tunnelAdapterSentBytesDelta'] += $After[$name].sent - $Before[$name].sent
+        $Destination['tunnelAdapterReceivedBytesDelta'] += $After[$name].received - $Before[$name].received
     }
+}
+
+function Get-EndpointRouteSummary {
+    param([int[]] $TunnelInterfaceIndexes)
+
+    $summary = [ordered]@{
+        attempted = $true
+        candidateCount = 0
+        tunnelCandidateCount = 0
+        nonTunnelCandidateCount = 0
+        noRouteCandidateCount = 0
+        failureCategory = $null
+    }
+
+    try {
+        # Keep resolved addresses in memory. The result records only whether the
+        # selected route belongs to a TunnelMint adapter, never the addresses.
+        $records = @(
+            Resolve-DnsName -Name 'cloudflare-dns.com' -Type A -DnsOnly -ErrorAction Stop
+            Resolve-DnsName -Name 'cloudflare-dns.com' -Type AAAA -DnsOnly -ErrorAction Stop
+        )
+        $candidates = @($records | Where-Object { $_.IPAddress } | ForEach-Object { $_.IPAddress } | Sort-Object -Unique)
+        $summary.candidateCount = $candidates.Count
+
+        foreach ($candidate in $candidates) {
+            try {
+                $route = @(Find-NetRoute -RemoteIPAddress $candidate -ErrorAction Stop | Select-Object -First 1)
+                if ($route.Count -eq 0) {
+                    $summary.noRouteCandidateCount++
+                } elseif ($TunnelInterfaceIndexes -contains [int] $route[0].InterfaceIndex) {
+                    $summary.tunnelCandidateCount++
+                } else {
+                    $summary.nonTunnelCandidateCount++
+                }
+            }
+            catch {
+                $summary.noRouteCandidateCount++
+            }
+        }
+    }
+    catch {
+        $summary.failureCategory = 'name-resolution'
+    }
+
+    return $summary
 }
 
 $result = [ordered]@{
@@ -39,6 +84,7 @@ $result = [ordered]@{
     managerRunning = $false
     tunnelServices = [ordered]@{ count = 0; runningCount = 0 }
     tunnelAdapters = [ordered]@{ matchedCount = 0; upCount = 0; routeCount = 0 }
+    endpointRoute = [ordered]@{ attempted = $false; candidateCount = 0; tunnelCandidateCount = 0; nonTunnelCandidateCount = 0; noRouteCandidateCount = 0; failureCategory = $null }
     tcp443 = [ordered]@{ attempted = $false; connected = $false; tunnelAdapterSentBytesDelta = 0; tunnelAdapterReceivedBytesDelta = 0 }
     dohHttps = [ordered]@{ attempted = $false; succeeded = $false; statusCode = $null; failureCategory = $null; tunnelAdapterSentBytesDelta = 0; tunnelAdapterReceivedBytesDelta = 0 }
     error = $null
@@ -70,6 +116,8 @@ try {
     if ($result.tunnelAdapters.upCount -eq 0) {
         throw 'No active TunnelMint tunnel adapter was found.'
     }
+    $tunnelIfIndexes = @($adapters | ForEach-Object { [int] $_.ifIndex })
+    $result.endpointRoute = Get-EndpointRouteSummary -TunnelInterfaceIndexes $tunnelIfIndexes
 
     $before = Get-AdapterCounters -Names $aliases
     $result.tcp443.attempted = $true
