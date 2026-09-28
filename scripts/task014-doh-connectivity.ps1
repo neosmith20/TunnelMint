@@ -86,7 +86,7 @@ $result = [ordered]@{
     tunnelAdapters = [ordered]@{ matchedCount = 0; upCount = 0; routeCount = 0 }
     endpointRoute = [ordered]@{ attempted = $false; candidateCount = 0; tunnelCandidateCount = 0; nonTunnelCandidateCount = 0; noRouteCandidateCount = 0; failureCategory = $null }
     tcp443 = [ordered]@{ attempted = $false; connected = $false; tunnelAdapterSentBytesDelta = 0; tunnelAdapterReceivedBytesDelta = 0 }
-    dohHttps = [ordered]@{ attempted = $false; succeeded = $false; statusCode = $null; failureCategory = $null; tunnelAdapterSentBytesDelta = 0; tunnelAdapterReceivedBytesDelta = 0 }
+    dohHttps = [ordered]@{ attempted = $false; succeeded = $false; statusCode = $null; contentType = $null; failureCategory = $null; tunnelAdapterSentBytesDelta = 0; tunnelAdapterReceivedBytesDelta = 0 }
     error = $null
     completedAtUtc = $null
 }
@@ -137,9 +137,14 @@ try {
         $probe = [byte[]] (0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1)
         $response = Invoke-WebRequest -Uri 'https://cloudflare-dns.com/dns-query' -Method Post -ContentType 'application/dns-message' -Headers @{ Accept = 'application/dns-message' } -Body $probe -TimeoutSec 10 -UseBasicParsing
         $result.dohHttps.statusCode = [int] $response.StatusCode
-        $result.dohHttps.succeeded = $response.StatusCode -ge 200 -and $response.StatusCode -lt 300
+        $result.dohHttps.contentType = [string] $response.Headers['Content-Type']
+        $result.dohHttps.succeeded = $response.StatusCode -ge 200 -and $response.StatusCode -lt 300 -and $result.dohHttps.contentType -match '(?i)^application/dns-message(?:\s*;|$)'
         if (-not $result.dohHttps.succeeded) {
-            $result.dohHttps.failureCategory = 'http-status'
+            if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
+                $result.dohHttps.failureCategory = 'http-status'
+            } else {
+                $result.dohHttps.failureCategory = 'content-type'
+            }
         }
     }
     catch {

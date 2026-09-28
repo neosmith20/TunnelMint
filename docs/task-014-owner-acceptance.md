@@ -8,8 +8,9 @@ acceptance then began from Task 016 head
 `ca4b76f8044e6fa98b48e9cbcccf2ef6cc25f010` on branch
 `codex/task-014-owner-acceptance`.
 
-Task 014 is blocked by a reproducible startup failure. No tunnel, DNS, DoH,
-leak, lifecycle, or beta-readiness check is marked passed.
+Task 014 remains incomplete. Plain-DNS and Cloudflare DoH activation now have
+live evidence, while the owner endpoint, leak, lifecycle, and beta-readiness
+checks remain unresolved or unexecuted.
 
 ## Environment and secret handling
 
@@ -154,9 +155,10 @@ side-by-side package remains `WireGuard` version `1.1.1`, published by
 `WIREGUARD-COPYING`.
 
 The owner configuration remains unread, unmodified, and absent from this
-repository. Live import, connection, traffic, DNS, DoH, leak, lifecycle,
-IPv6, and upgrade acceptance checks remain unexecuted and are not marked
-passed.
+repository. Live traffic, leak, lifecycle, IPv6, and upgrade acceptance checks
+remain incomplete and are not marked passed. Plain-DNS and Cloudflare DoH
+evidence is recorded below; it does not establish acceptance for every
+endpoint or every remaining check.
 
 ## Plain-DNS pass and DoH TLS regression
 
@@ -262,6 +264,116 @@ events to the tunnel log: candidate order, IPv4/IPv6 family, connection
 success, and a coarse failure category. It will not log endpoint addresses,
 configuration data, credentials, or keys. No change to routing, timeout,
 TLS validation, DNS fallback, or firewall policy is claimed from that
-diagnostic.
+diagnostic. After that retry,
+`scripts/task014-doh-log-extract.ps1` exports only those fixed-format events
+to a local sanitized result file for this acceptance work; it never copies or
+prints the raw product log.
+
+## Live DoH endpoint results
+
+On 2026-09-28, the owner connected the current installed build using the
+Cloudflare DoH endpoint. This confirms the former TLS panic and bounded
+transport timeout are no longer present for that endpoint. It is live DoH
+activation evidence, but it does not complete the remaining DNS leak, traffic,
+disconnect, route-restoration, or upgrade checks.
+
+The owner then tried an external DoH endpoint and the tunnel failed closed with
+`DoH endpoint returned HTTP status 302 Found`. The server answered with an HTTP
+redirect instead of a successful DoH response. TunnelMint intentionally rejects
+redirects so it does not silently change the configured endpoint identity or
+TLS policy. The external service must expose the exact HTTPS DoH URL that
+returns a 2xx `application/dns-message` response, or the configuration must
+use the redirect's final HTTPS URL after verifying it is the intended resolver.
+This result does not by itself identify a TunnelMint transport defect.
+
+The corrected redirect probe then captured the comparison chain without
+publishing the tokenized URL. The original POST returned `302` to a Cloudflare
+Access login endpoint. Following that `Location` while preserving the POST
+returned `404`. The automatic-follow comparison returned `200`, but its
+content type was `text/html`, confirming it was an access/login response rather
+than `application/dns-message`. The earlier direct diagnostic therefore had a
+false-positive HTTP-status check: it followed redirects and did not require a
+DoH content type. The connectivity helper now requires
+`application/dns-message` before marking a direct probe successful.
+
+After the owner corrected the endpoint, the redirect probe returned HTTP 200
+directly with `application/dns-message`, no `Location` header, and a one-hop
+manual chain. This clears the external redirect diagnosis for the corrected
+endpoint. TunnelMint activation with that endpoint is still the next live
+acceptance step; this probe alone does not establish service startup,
+DNS-leak protection, traffic, or lifecycle behavior.
+
+Before accepting the custom endpoint, the owner must run the elevated
+`scripts/task014-doh-leak-acceptance.ps1` probe while that tunnel is active.
+It checks loopback-only DNS on the TunnelMint adapter, captures port-53
+traffic during a fresh DNS query, observes service-owned HTTPS connections to
+the endpoint's resolved addresses, and requires a fresh query to fail after
+the endpoint is broken. Use `-ManualServerBreak` after arranging a real
+server-side outage or access revocation; the local firewall mode cannot end an
+already-established HTTPS session. The temporary outbound block (when used)
+and packet capture are removed in script cleanup. The result stores only an
+endpoint SHA-256 fingerprint and aggregate counts; exact HTTPS path/client-ID
+use still requires the DoH server's request log because TLS hides the HTTP
+path from Windows packet capture.
+
+The first leak-acceptance attempt did not pass. The TunnelMint adapter had one
+loopback DNS address and no non-loopback address, and the service had an
+endpoint HTTPS connection. However, the capture recorded two non-loopback
+port-53 events during the baseline query. The temporary local endpoint block
+was created and removed successfully, but the subsequent fresh query still
+returned a response over an existing HTTPS connection. This is insufficient
+evidence for either zero DNS leakage or fail-closed behavior; no custom DoH
+acceptance item is marked passed.
+
+The owner then reran the probe with `-ManualServerBreak` and disabled or
+revoked the custom DoH endpoint during the scripted pause. The TunnelMint
+service and adapter were running, the TunnelMint adapter still had only its
+loopback DNS address, and the baseline query received a response while an
+endpoint HTTPS connection was observed. After the server-side break, the
+fresh query received no DNS response, which is the expected fail-closed
+signal. The same result recorded eight non-loopback port-53 events, however,
+and the system-wide DNS summary still contained two non-loopback configured
+addresses. The system-wide count is retained as context because physical
+adapters may keep their ordinary DNS settings; the acceptance decision relies
+on the TunnelMint adapter's loopback-only setting and observed wire traffic.
+Because the zero-port-53 condition is not met, this rerun does not accept
+custom DoH. Exact endpoint path and client-ID use still require the sanitized
+DoH server request log.
+
+The port-53 counts above came from the initial conservative parser, which
+treated every non-loopback pktmon record as possible leakage. The acceptance
+helper now parses pktmon's per-packet IP, direction, wire-type, and drop fields
+and reports outbound wire candidates separately from unclassified records.
+The result must be rerun with that helper before deciding whether the observed
+records were blocked WFP attempts or packets that reached a physical
+interface; either an outbound wire candidate or incomplete classification
+keeps the zero-leak check failed.
+
+The next rerun used that parser and found zero outbound wire candidates, but
+six baseline and eight broken records remained unclassified. The fail-closed
+DNS result therefore remains useful, but the capture is still insufficient to
+accept the zero-leak condition. The helper now narrows matching to pktmon
+records that explicitly identify TCP or UDP port 53 and treats an empty,
+readable capture as complete evidence; one more run is required.
+
+That follow-up run recorded zero port-53 packet records, zero outbound wire
+candidates, and no unclassified records during both queries. The TunnelMint
+adapter remained loopback-only and the baseline query received a DNS response.
+It did not pass the failure-closed check: the query after the purported manual
+endpoint break also received a DNS response. The server-side change therefore
+did not interrupt requests from the running client, or did not take effect for
+the configured endpoint. No custom DoH acceptance item is marked passed.
+
+The owner then corrected the test so the exact same external DoH URL was used
+in the TunnelMint `DNS =` setting and as the probe endpoint. With that matched
+configuration, the elevated run found a running service and adapter,
+loopback-only DNS on the TunnelMint adapter, and a successful baseline DNS
+response while an endpoint HTTPS connection was observed. Both the baseline
+and broken phases recorded zero port-53 packet records, zero outbound wire
+candidates, and zero unclassified records. After the owner disabled the same
+external endpoint during the scripted pause, the fresh DNS query received no
+response. This is real-machine evidence that the tested encrypted-DNS path
+fails closed without observed plaintext DNS traffic. Exact endpoint
+path/client-ID preservation still requires the sanitized resolver request log.
 
 No beta-readiness or production-readiness claim is made.
