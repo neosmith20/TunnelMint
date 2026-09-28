@@ -2,9 +2,31 @@
 
 ## Purpose
 
-This is the real-machine acceptance checklist to run after Task 013 hardening is merged/reviewed. These checks require an elevated disposable Windows VM, real tunnel configuration/peer access, and owner observation. Coding agents must not mark a check passed based only on unit tests, mocks, static review, or build success.
+This is the real-machine acceptance checklist to run after Task 016 final pre-acceptance cleanup is merged/reviewed. These checks require an elevated disposable Windows VM, real tunnel configuration/peer access, and owner observation. Coding agents must not mark a check passed based only on unit tests, mocks, static review, or build success.
 
 Record exact build/commit tested and evidence/results in `docs/task-014-owner-acceptance.md` when performed.
+
+## Owner-provided live test tunnel — SECRET / LOCAL ONLY
+
+The owner has placed a temporary real WireGuard configuration on the Windows test VM at:
+
+`C:\TunnelMint-Test\owner-acceptance.conf`
+
+This file contains live/sensitive tunnel credentials and connects to a real external server. It exists only for Task 014 acceptance testing.
+
+Mandatory handling rules:
+
+- NEVER copy this configuration into the TunnelMint repository or any directory beneath the repository checkout.
+- NEVER stage, commit, push, attach, upload, or otherwise publish this configuration.
+- NEVER paste or reproduce the private key, preshared key, complete configuration, or other secret material in commits, PRs, issues, task reports, logs, screenshots, test output, or documentation.
+- Do not echo/dump the entire configuration to the console. Read only the minimum fields required for testing and redact sensitive values from any evidence.
+- Treat the canonical file as read-only. Do not edit it in place.
+- If full-tunnel, split-tunnel, DNS, or failure-test variants are required, make temporary working copies only under `C:\TunnelMint-Test\` (or the Windows temporary directory), never under the Git checkout. Preserve the original keys only as necessary to connect; do not record them in reports.
+- Delete temporary derivative configs when their test is complete.
+- Do not make destructive or administrative changes to the remote server. This task tests the TunnelMint client side only.
+- Before any Git commit/push during Task 014, explicitly verify that no `.conf`, key material, or owner test artifacts from `C:\TunnelMint-Test\` have entered the repository/staging area.
+- If the local test config is missing or fails to authenticate, report only the failure category needed for the owner to act; do not expose its contents.
+- The owner will revoke/remove this temporary live tunnel configuration after acceptance testing. Do not assume it remains valid for future testing.
 
 ## Install / product isolation
 
