@@ -37,6 +37,14 @@ jobs:
         shell: cmd
         run: cmd /c build.bat
 
+      - name: Smoke test TLS with build overlay
+        shell: cmd
+        run: |
+          set PATH=%CD%\.deps\go\bin;%PATH%
+          set GOPATH=%CD%\.deps\gopath
+          set GOROOT=%CD%\.deps\go
+          go test -overlay .overlay/overlay.json ./doh -run TestTLSClientHelloDoesNotPanic
+
       - name: Smoke test built client startup
         shell: cmd
         run: amd64\tunnelmint.exe /update

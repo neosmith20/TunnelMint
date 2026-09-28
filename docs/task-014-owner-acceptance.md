@@ -158,4 +158,32 @@ repository. Live import, connection, traffic, DNS, DoH, leak, lifecycle,
 IPv6, and upgrade acceptance checks remain unexecuted and are not marked
 passed.
 
+## Plain-DNS pass and DoH TLS regression
+
+On 2026-09-28, the owner imported the local acceptance configuration and
+successfully connected it using a normal IP-address DNS setting. This is real
+plain-DNS tunnel evidence, but it does not complete the remaining traffic,
+route-restoration, or lifecycle checks.
+
+Changing that test to DoH exposed a release-blocking TLS startup panic before
+the encrypted resolver could make a request. The sanitized stack identified
+`crypto/internal/fips140.Version` called by `crypto/tls` while constructing a
+ClientHello. The disabled-FIPS compatibility overlay incorrectly panicked for
+that ordinary TLS metadata query.
+
+The pending focused fix returns Go's normal non-frozen FIPS metadata version
+(`latest`) and makes disabled-mode metadata/service-indicator accessors
+non-panicking, while retaining disabled FIPS mode and TLS certificate
+validation. A deterministic ClientHello test passes both normally and with
+the production overlay enabled; it is included in Windows CI with that
+overlay. All three Windows client architectures rebuilt successfully, and the
+rebuilt amd64 `/update` smoke test exits successfully.
+
+The current restricted agent sandbox cannot relink a new MSI: WiX's ICE
+validation cannot access Windows Installer services from that account. The
+existing MSI therefore has not been retested with this fix. DoH live-machine
+acceptance remains blocked until the fixed amd64 MSI is built and installed by
+the owner from an Administrator desktop session, then the same DoH test is
+repeated.
+
 No beta-readiness or production-readiness claim is made.
