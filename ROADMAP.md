@@ -8,7 +8,7 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 - [x] Build the untouched Windows baseline successfully.
 - [ ] Confirm tunnel import, connect, disconnect, handshake, and traffic behavior.
 - [x] Document a reproducible build procedure.
-- [ ] Establish TunnelMint development branding so test builds are clearly identifiable.
+- [x] Establish TunnelMint development branding so test builds are clearly identifiable.
 
 **Exit criteria:** A reproducible TunnelMint development build behaves correctly before any new networking behavior is introduced.
 
@@ -23,12 +23,12 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 
 ## Phase 2 — Encrypted DNS Engine
 
-- [ ] Implement DoH request and response handling.
-- [ ] Validate TLS certificates normally and securely.
-- [ ] Implement automatic hostname bootstrap.
-- [ ] Ship multiple sensible bootstrap resolvers for reliability.
-- [ ] Ensure bootstrap is used only to locate the encrypted DNS endpoint.
-- [ ] Cache endpoint information where safe and useful.
+- [x] Implement DoH request and response handling.
+- [x] Validate TLS certificates normally and securely.
+- [x] Implement automatic hostname bootstrap.
+- [x] Ship multiple sensible bootstrap resolvers for reliability.
+- [x] Ensure bootstrap is used only to locate the encrypted DNS endpoint.
+- [x] Cache endpoint information where safe and useful.
 
 **Exit criteria:** A configured DoH endpoint can be reached reliably and DNS queries can be resolved through it.
 
@@ -48,33 +48,33 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 
 Add a simple Settings area for bootstrap DNS.
 
-- [ ] Show built-in bootstrap resolvers.
-- [ ] Allow resolvers to be enabled or disabled.
-- [ ] Allow resolvers to be reordered.
-- [ ] Allow custom bootstrap resolvers.
-- [ ] Allow restoring defaults.
+- [x] Show built-in bootstrap resolvers.
+- [x] Allow resolvers to be enabled or disabled.
+- [x] Allow resolvers to be reordered.
+- [x] Allow custom bootstrap resolvers.
+- [x] Allow restoring defaults.
 - [ ] Keep normal users out of advanced configuration unless they choose to open it.
 
 **Exit criteria:** Default behavior requires no setup, while users retain control over bootstrap resolver choices.
 
 ## Phase 5 — TunnelMint UI
 
-- [ ] Keep tunnel import, activation, status, and editing simple.
-- [ ] Make the interface visually distinct and clearly TunnelMint.
-- [ ] Display whether DNS is plain or encrypted.
-- [ ] Show basic tunnel, handshake, traffic, and DNS status.
-- [ ] Keep the interface uncluttered.
+- [x] Keep tunnel import, activation, status, and editing simple.
+- [x] Make the interface visually distinct and clearly TunnelMint.
+- [x] Display whether DNS is plain or encrypted.
+- [x] Show basic tunnel, handshake, traffic, and DNS status.
+- [x] Keep the interface uncluttered.
 
 **Exit criteria:** The client is simple enough to install, import a tunnel, and connect without documentation.
 
 ## Phase 6 — Windows Release
 
-- [ ] Build a normal Windows installer.
+- [x] Build a normal Windows installer.
 - [ ] Verify install, upgrade, uninstall, reboot, sleep, and wake behavior.
 - [ ] Test network changes between Ethernet and Wi-Fi.
 - [ ] Test tunnel and encrypted DNS failure scenarios.
-- [ ] Verify no private keys, credentials, or test configurations are included in release artifacts.
-- [ ] Prepare release notes and known limitations.
+- [x] Verify no private keys, credentials, or test configurations are included in release artifacts.
+- [x] Prepare release notes and known limitations.
 
 **Exit criteria:** TunnelMint can be installed and used as normal end-user Windows software.
 

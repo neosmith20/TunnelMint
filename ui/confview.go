@@ -374,7 +374,7 @@ func (iv *interfaceView) widgetsLines() []widgetsLine {
 	return iv.lines
 }
 
-func (iv *interfaceView) apply(c *conf.Interface) {
+func (iv *interfaceView) apply(c *conf.Interface, state manager.TunnelState) {
 	if IsAdmin {
 		iv.publicKey.show(c.PrivateKey.Public().String())
 	} else {
@@ -403,14 +403,23 @@ func (iv *interfaceView) apply(c *conf.Interface) {
 		iv.addresses.hide()
 	}
 
-	if len(c.DNS)+len(c.DNSOverHTTPS)+len(c.DNSSearch) > 0 {
-		addrStrings := make([]string, 0, len(c.DNS)+len(c.DNSOverHTTPS)+len(c.DNSSearch))
+	if len(c.DNSOverHTTPS) > 0 {
+		if state == manager.TunnelStarting {
+			iv.dns.show(l18n.Sprintf("Encrypted (DoH): initializing"))
+		} else {
+			status := l18n.Sprintf("Encrypted (DoH)")
+			if state == manager.TunnelStopped {
+				status += l18n.Sprintf(" (ready on activation)")
+			}
+			iv.dns.show(status + ": " + strings.Join(c.DNSOverHTTPS, l18n.EnumerationSeparator()))
+		}
+	} else if len(c.DNS)+len(c.DNSSearch) > 0 {
+		addrStrings := make([]string, 0, len(c.DNS)+len(c.DNSSearch))
 		for _, address := range c.DNS {
 			addrStrings = append(addrStrings, address.String())
 		}
-		addrStrings = append(addrStrings, c.DNSOverHTTPS...)
 		addrStrings = append(addrStrings, c.DNSSearch...)
-		iv.dns.show(strings.Join(addrStrings[:], l18n.EnumerationSeparator()))
+		iv.dns.show(l18n.Sprintf("Plain: %s", strings.Join(addrStrings[:], l18n.EnumerationSeparator())))
 	} else {
 		iv.dns.hide()
 	}
@@ -442,6 +451,12 @@ func (iv *interfaceView) apply(c *conf.Interface) {
 		iv.table.show(l18n.Sprintf("off"))
 	} else {
 		iv.table.hide()
+	}
+}
+
+func (iv *interfaceView) showDNSError(err error) {
+	if err != nil {
+		iv.dns.show(l18n.Sprintf("Encrypted (DoH): error: %v", err))
 	}
 }
 
@@ -638,6 +653,9 @@ func (cv *ConfView) onTunnelChanged(tunnel *manager.Tunnel, state, globalState m
 		}
 		cv.Synchronize(func() {
 			cv.setTunnel(tunnel, &config, state)
+			if err != nil && len(config.Interface.DNSOverHTTPS) > 0 {
+				cv.interfaze.showDNSError(err)
+			}
 		})
 	}
 }
@@ -677,7 +695,7 @@ func (cv *ConfView) setTunnel(tunnel *manager.Tunnel, config *conf.Config, state
 	}
 	cv.name.SetVisible(tunnel != nil)
 
-	cv.interfaze.apply(&config.Interface)
+	cv.interfaze.apply(&config.Interface, state)
 	cv.interfaze.status.update(state)
 	cv.interfaze.toggleActive.update(state)
 	inverse := make(map[*peerView]bool, len(cv.peers))

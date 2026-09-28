@@ -6,12 +6,15 @@
 package updater
 
 const (
+	// updatesEnabled remains false until TunnelMint has its own signed release
+	// infrastructure. The updater package stays isolated for that future work.
+	updatesEnabled         = false
 	releasePublicKeyBase64 = "RWRNqGKtBXftKTKPpBPGDMe8jHLnFQ0EdRy8Wg0apV6vTDFLAODD83G4"
-	updateServerHost       = "download.wireguard.com"
+	updateServerHost       = "updates.invalid"
 	updateServerPort       = 443
 	updateServerUseHttps   = true
-	latestVersionPath      = "/windows-client/latest.sig"
-	msiPath                = "/windows-client/%s"
-	msiArchPrefix          = "wireguard-%s-"
+	latestVersionPath      = "/releases/latest.sig"
+	msiPath                = "/releases/%s"
+	msiArchPrefix          = "tunnelmint-%s-"
 	msiSuffix              = ".msi"
 )

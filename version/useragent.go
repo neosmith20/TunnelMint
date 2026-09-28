@@ -8,6 +8,8 @@ package version
 import (
 	"fmt"
 	"runtime"
+
+	"golang.zx2c4.com/wireguard/windows/product"
 )
 
 func Arch() string {
@@ -22,5 +24,5 @@ func Arch() string {
 }
 
 func UserAgent() string {
-	return fmt.Sprintf("WireGuard/%s (%s; %s)", Number, OsName(), Arch())
+	return fmt.Sprintf("%s/%s (%s; %s)", product.UserAgentName, Number, OsName(), Arch())
 }

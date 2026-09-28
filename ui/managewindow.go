@@ -15,23 +15,25 @@ import (
 
 	"golang.zx2c4.com/wireguard/windows/l18n"
 	"golang.zx2c4.com/wireguard/windows/manager"
+	"golang.zx2c4.com/wireguard/windows/product"
 )
 
 type ManageTunnelsWindow struct {
 	walk.FormBase
 
-	tabs        *walk.TabWidget
-	tunnelsPage *TunnelsPage
-	logPage     *LogPage
-	updatePage  *UpdatePage
+	tabs         *walk.TabWidget
+	tunnelsPage  *TunnelsPage
+	logPage      *LogPage
+	settingsPage *SettingsPage
+	updatePage   *UpdatePage
 
 	tunnelChangedCB *manager.TunnelChangeCallback
 }
 
 const (
-	manageWindowWindowClass = "WireGuard UI - Manage Tunnels"
+	manageWindowWindowClass = product.ManagerWindowClass
 	raiseMsg                = win.WM_USER + 0x3510
-	aboutWireGuardCmd       = 0x37
+	aboutTunnelMintCmd      = 0x37
 )
 
 var taskbarButtonCreatedMsg uint32
@@ -56,7 +58,7 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 	}
 
 	mtw := new(ManageTunnelsWindow)
-	mtw.SetName("WireGuard")
+	mtw.SetName(product.Name)
 
 	err = walk.InitWindow(mtw, nil, manageWindowWindowClass, win.WS_OVERLAPPEDWINDOW, win.WS_EX_CONTROLPARENT)
 	if err != nil {
@@ -69,7 +71,7 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 	if icon, err := loadLogoIcon(32); err == nil {
 		mtw.SetIcon(icon)
 	}
-	mtw.SetTitle("WireGuard")
+	mtw.SetTitle(product.ManagerWindowTitle)
 	mtw.SetFont(font)
 	mtw.SetSize(walk.Size{675, 525})
 	mtw.SetMinMaxSize(walk.Size{500, 400}, walk.Size{0, 0})
@@ -101,6 +103,11 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 	}
 	mtw.tabs.Pages().Add(mtw.logPage.TabPage)
 
+	if mtw.settingsPage, err = NewSettingsPage(); err != nil {
+		return nil, err
+	}
+	mtw.tabs.Pages().Add(mtw.settingsPage.TabPage)
+
 	mtw.VisibleChanged().Attach(func() {
 		if mtw.Visible() {
 			mtw.tunnelsPage.updateConfView()
@@ -120,8 +127,8 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 			CbSize:     uint32(unsafe.Sizeof(win.MENUITEMINFO{})),
 			FMask:      win.MIIM_ID | win.MIIM_STRING | win.MIIM_FTYPE,
 			FType:      win.MIIM_STRING,
-			DwTypeData: windows.StringToUTF16Ptr(l18n.Sprintf("&About WireGuard…")),
-			WID:        uint32(aboutWireGuardCmd),
+			DwTypeData: windows.StringToUTF16Ptr(l18n.Sprintf("&About TunnelMint…")),
+			WID:        uint32(aboutTunnelMintCmd),
 		})
 		win.InsertMenuItem(systemMenu, 1, true, &win.MENUITEMINFO{
 			CbSize: uint32(unsafe.Sizeof(win.MENUITEMINFO{})),
@@ -201,7 +208,7 @@ func (mtw *ManageTunnelsWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lPara
 			walk.App().Exit(198)
 		}
 	case win.WM_SYSCOMMAND:
-		if wParam == aboutWireGuardCmd {
+		if wParam == aboutTunnelMintCmd {
 			onAbout(mtw)
 			return 0
 		}
@@ -214,12 +221,10 @@ func (mtw *ManageTunnelsWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lPara
 		}
 		if !mtw.Visible() {
 			mtw.tunnelsPage.listView.SelectFirstActiveTunnel()
-			if mtw.tabs.Pages().Len() != 3 {
-				mtw.tabs.SetCurrentIndex(0)
-			}
+			mtw.tabs.SetCurrentIndex(0)
 		}
-		if mtw.tabs.Pages().Len() == 3 {
-			mtw.tabs.SetCurrentIndex(2)
+		if mtw.updatePage != nil {
+			mtw.tabs.SetCurrentIndex(mtw.tabs.Pages().Index(mtw.updatePage.TabPage))
 		}
 		raise(mtw.Handle())
 		return 0

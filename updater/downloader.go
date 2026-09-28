@@ -53,6 +53,9 @@ func CheckForUpdate() (updateFound *UpdateFound, err error) {
 }
 
 func checkForUpdate(keepSession bool) (*UpdateFound, *winhttp.Session, *winhttp.Connection, error) {
+	if !updatesEnabled {
+		return nil, nil, nil, errors.New("TunnelMint updates are disabled until signed release infrastructure is available")
+	}
 	if !version.IsRunningOfficialVersion() {
 		return nil, nil, nil, errors.New("Build is not official, so updates are disabled")
 	}

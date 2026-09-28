@@ -9,9 +9,11 @@ import (
 	"sync"
 
 	"golang.org/x/sys/windows/registry"
+
+	"golang.zx2c4.com/wireguard/windows/product"
 )
 
-const adminRegKey = `Software\WireGuard`
+const adminRegKey = product.AdminRegistryKey
 
 var (
 	adminKey     registry.Key

@@ -11,13 +11,13 @@
 	<?define PlatformProgramFilesFolder = "ProgramFilesFolder"?>
 <?endif?>
 <?if $(var.WIREGUARD_PLATFORM) = "amd64"?>
-	<?define UpgradeCode = "5e5a1da5-ba36-404d-92ec-41050d1c799c"?>
+	<?define UpgradeCode = "a9fd3e3c-7e5b-4d6d-9a6b-6d7f497ba1de"?>
 <?elseif $(var.WIREGUARD_PLATFORM) = "x86"?>
-	<?define UpgradeCode = "62754a0a-fee9-4412-b739-e8da2e7c9405"?>
+	<?define UpgradeCode = "f3d63bd7-03ea-4a31-9ef4-f2d7414c1c75"?>
 <?elseif $(var.WIREGUARD_PLATFORM) = "arm"?>
-	<?define UpgradeCode = "f90bca59-9627-431d-92b4-a5c2d9a529ff"?>
+	<?define UpgradeCode = "24240e99-84f5-442f-9ec6-bf3c574ad8cc"?>
 <?elseif $(var.WIREGUARD_PLATFORM) = "arm64"?>
-	<?define UpgradeCode = "7ff76099-8940-4d3e-99b9-50a3b3ca1ee9"?>
+	<?define UpgradeCode = "e3b4a4e6-8070-4655-9d64-d0d4b098d2f1"?>
 <?else?>
 	<?error Unknown platform ?>
 <?endif?>
@@ -25,25 +25,25 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Product
 		Id="*"
-		Name="WireGuard"
+		Name="TunnelMint Development"
 		Language="1033"
 		Version="$(var.WIREGUARD_VERSION)"
-		Manufacturer="WireGuard LLC"
+		Manufacturer="TunnelMint contributors"
 		UpgradeCode="$(var.UpgradeCode)">
 		<Package
 			InstallerVersion="500"
 			Compressed="yes"
 			InstallScope="perMachine"
-			Description="WireGuard: Fast, Modern, Secure VPN Tunnel"
+			Description="TunnelMint development VPN client"
 			ReadOnly="yes" />
 
 		<MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-		<Icon Id="wireguard.ico" SourceFile="..\ui\icon\wireguard.ico" />
+		<Icon Id="tunnelmint.ico" SourceFile="..\ui\icon\tunnelmint.ico" />
 		<Binary Id="customactions.dll" SourceFile="$(var.WIREGUARD_PLATFORM)\customactions.dll" />
 
-		<Property Id="ARPPRODUCTICON" Value="wireguard.ico" />
-		<Property Id="ARPURLINFOABOUT" Value="https://www.wireguard.com/" />
+		<Property Id="ARPPRODUCTICON" Value="tunnelmint.ico" />
+		<Property Id="ARPURLINFOABOUT" Value="https://github.com/neosmith20/TunnelMint" />
 		<Property Id="ARPNOMODIFY" Value="yes" />
 		<Property Id="DISABLEADVTSHORTCUTS" Value="yes" />
 		<Property Id="DISABLEROLLBACK" Value="yes" />
@@ -65,7 +65,7 @@
 		-->
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="$(var.PlatformProgramFilesFolder)">
-				<Directory Id="WireGuardFolder" Name="WireGuard" />
+				<Directory Id="TunnelMintFolder" Name="TunnelMint" />
 			</Directory>
 			<Directory Id="ProgramMenuFolder" />
 		</Directory>
@@ -73,24 +73,24 @@
 		<!--
 			Components
 		-->
-		<ComponentGroup Id="WireGuardComponents">
-			<Component Directory="WireGuardFolder" Id="WireGuardExecutable" Guid="c3508d23-3362-47ce-9220-321bdb1a1acc">
-				<File Source="..\$(var.WIREGUARD_PLATFORM)\wireguard.exe" KeyPath="yes">
-					<Shortcut Id="WireGuardStartMenuShortcut" Directory="ProgramMenuFolder" Name="WireGuard" Description="WireGuard: Fast, Modern, Secure VPN Tunnel" WorkingDirectory="WireGuardFolder" Advertise="yes" />
+		<ComponentGroup Id="TunnelMintComponents">
+			<Component Directory="TunnelMintFolder" Id="TunnelMintExecutable" Guid="0d4a3a8e-26f2-40e5-9a0e-f1ac70a0fc99">
+				<File Source="..\$(var.WIREGUARD_PLATFORM)\tunnelmint.exe" KeyPath="yes">
+					<Shortcut Id="TunnelMintStartMenuShortcut" Directory="ProgramMenuFolder" Name="TunnelMint" Description="TunnelMint development VPN client" WorkingDirectory="TunnelMintFolder" Advertise="yes" />
 				</File>
 				<ServiceControl Id="DummyService.3AA0C492_29F4_4342_B608_DB95B2DECB13" Name="DummyService.3AA0C492_29F4_4342_B608_DB95B2DECB13" /><!-- A dummy to make WiX create ServiceControl table for us. -->
 			</Component>
-			<Component Directory="WireGuardFolder" Id="WgExecutable" Guid="540cf446-fcc3-4452-b9fb-eb4c02780251">
+			<Component Directory="TunnelMintFolder" Id="TunnelMintWgExecutable" Guid="0f2e419a-d4f9-4ebc-8ebc-378f90e5d3e3">
 				<File Source="..\$(var.WIREGUARD_PLATFORM)\wg.exe" KeyPath="yes" />
-				<Environment Id="PATH" Name="PATH" System="yes" Action="set" Part="last" Permanent="no" Value="[WireGuardFolder]" />
+				<Environment Id="PATH" Name="PATH" System="yes" Action="set" Part="last" Permanent="no" Value="[TunnelMintFolder]" />
 			</Component>
 		</ComponentGroup>
 
 		<!--
 			Features
 		-->
-		<Feature Id="WireGuardFeature" Title="WireGuard" Level="1">
-			<ComponentGroupRef Id="WireGuardComponents" />
+		<Feature Id="TunnelMintFeature" Title="TunnelMint Development" Level="1">
+			<ComponentGroupRef Id="TunnelMintComponents" />
 		</Feature>
 
 		<!--
@@ -110,15 +110,15 @@
 		</InstallExecuteSequence>
 
 		<!--
-			Evaluate WireGuard services and populate ServiceControl table
+			Evaluate TunnelMint services and populate ServiceControl table
 		-->
-		<CustomAction Id="EvaluateWireGuardServices" BinaryKey="customactions.dll" DllEntry="EvaluateWireGuardServices" />
+		<CustomAction Id="EvaluateTunnelMintServices" BinaryKey="customactions.dll" DllEntry="EvaluateTunnelMintServices" />
 		<InstallExecuteSequence>
-			<Custom Action="EvaluateWireGuardServices" After="FindRelatedProducts" />
+			<Custom Action="EvaluateTunnelMintServices" After="FindRelatedProducts" />
 		</InstallExecuteSequence>
 
 		<!--
-			Launch wireguard.exe on product reconfiguration (starting same MSI again)
+			Launch tunnelmint.exe on product reconfiguration (starting same MSI again)
 		-->
 		<CustomAction Id="LaunchApplicationAndAbort" BinaryKey="customactions.dll" DllEntry="LaunchApplicationAndAbort" />
 		<InstallExecuteSequence>
@@ -126,19 +126,19 @@
 		</InstallExecuteSequence>
 
 		<!--
-			Evaluate WireGuard components
+			Evaluate TunnelMint components
 		-->
-		<CustomAction Id="EvaluateWireGuardComponents" BinaryKey="customactions.dll" DllEntry="EvaluateWireGuardComponents" />
+		<CustomAction Id="EvaluateTunnelMintComponents" BinaryKey="customactions.dll" DllEntry="EvaluateTunnelMintComponents" />
 		<InstallExecuteSequence>
-			<Custom Action="EvaluateWireGuardComponents" After="ProcessComponents" />
+			<Custom Action="EvaluateTunnelMintComponents" After="ProcessComponents" />
 		</InstallExecuteSequence>
 
 		<!--
-			Kill lingering processes
+			Kill lingering TunnelMint processes
 		-->
-		<CustomAction Id="KillWireGuardProcesses" BinaryKey="customactions.dll" DllEntry="KillWireGuardProcesses" Execute="deferred" Impersonate="no" />
+		<CustomAction Id="KillTunnelMintProcesses" BinaryKey="customactions.dll" DllEntry="KillTunnelMintProcesses" Execute="deferred" Impersonate="no" />
 		<InstallExecuteSequence>
-			<Custom Action="KillWireGuardProcesses" After="StopServices" />
+			<Custom Action="KillTunnelMintProcesses" After="StopServices" />
 		</InstallExecuteSequence>
 
 		<!--
@@ -158,11 +158,11 @@
 		</InstallExecuteSequence>
 
 		<!--
-			Launch wireguard.exe after setup complete
+			Launch tunnelmint.exe after setup complete
 		-->
-		<CustomAction Id="LaunchApplication" HideTarget="yes" Impersonate="no" Execute="deferred" FileKey="wireguard.exe" ExeCommand="" Return="asyncNoWait" />
+		<CustomAction Id="LaunchApplication" HideTarget="yes" Impersonate="no" Execute="deferred" FileKey="tunnelmint.exe" ExeCommand="" Return="asyncNoWait" />
 		<InstallExecuteSequence>
-			<Custom Action="LaunchApplication" Before="InstallFinalize">(&amp;WireGuardFeature = 3) AND NOT DO_NOT_LAUNCH</Custom>
+			<Custom Action="LaunchApplication" Before="InstallFinalize">(&amp;TunnelMintFeature = 3) AND NOT DO_NOT_LAUNCH</Custom>
 		</InstallExecuteSequence>
 	</Product>
 </Wix>

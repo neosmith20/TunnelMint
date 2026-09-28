@@ -1,0 +1,250 @@
+/* SPDX-License-Identifier: MIT
+ *
+ * Copyright (C) 2026 TunnelMint contributors. All Rights Reserved.
+ */
+
+// Package bootstrap resolves DoH endpoint hostnames without using the system
+// resolver path that encrypted DNS mode will later replace.
+package bootstrap
+
+import (
+	"context"
+	"fmt"
+	"net"
+	"net/netip"
+	"net/url"
+	"strings"
+	"sync"
+	"time"
+)
+
+const (
+	DefaultTimeout    = 5 * time.Second
+	DefaultCacheTTL   = 5 * time.Minute
+	DefaultCacheLimit = 64
+)
+
+var defaultResolvers = []netip.Addr{
+	netip.MustParseAddr("1.1.1.1"),
+	netip.MustParseAddr("1.0.0.1"),
+	netip.MustParseAddr("9.9.9.9"),
+	netip.MustParseAddr("149.112.112.112"),
+	netip.MustParseAddr("8.8.8.8"),
+	netip.MustParseAddr("8.8.4.4"),
+}
+
+// DefaultResolvers returns the built-in ordered bootstrap resolver list.
+func DefaultResolvers() []netip.Addr {
+	return append([]netip.Addr(nil), defaultResolvers...)
+}
+
+// LookupFunc resolves host through one explicitly selected bootstrap resolver.
+// It is injectable so tests and later platform integration can avoid public DNS.
+type LookupFunc func(context.Context, netip.Addr, string) ([]netip.Addr, error)
+
+type cacheEntry struct {
+	addresses []netip.Addr
+	expires   time.Time
+	used      time.Time
+}
+
+// Cache is a small bounded endpoint-address cache. Entries expire after ttl;
+// callers should call Invalidate or Clear after tunnel/network changes.
+type Cache struct {
+	mu         sync.Mutex
+	entries    map[string]cacheEntry
+	ttl        time.Duration
+	maxEntries int
+	now        func() time.Time
+}
+
+func NewCache(ttl time.Duration, maxEntries int) *Cache {
+	if ttl <= 0 {
+		ttl = DefaultCacheTTL
+	}
+	if maxEntries <= 0 {
+		maxEntries = DefaultCacheLimit
+	}
+	return &Cache{entries: make(map[string]cacheEntry), ttl: ttl, maxEntries: maxEntries, now: time.Now}
+}
+
+func (c *Cache) Get(key string) ([]netip.Addr, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	entry, ok := c.entries[key]
+	if !ok {
+		return nil, false
+	}
+	now := c.now()
+	if !now.Before(entry.expires) {
+		delete(c.entries, key)
+		return nil, false
+	}
+	entry.used = now
+	c.entries[key] = entry
+	return append([]netip.Addr(nil), entry.addresses...), true
+}
+
+func (c *Cache) Put(key string, addresses []netip.Addr) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	now := c.now()
+	if _, ok := c.entries[key]; !ok && len(c.entries) >= c.maxEntries {
+		var oldestKey string
+		var oldest time.Time
+		for candidate, entry := range c.entries {
+			if oldestKey == "" || entry.used.Before(oldest) {
+				oldestKey, oldest = candidate, entry.used
+			}
+		}
+		delete(c.entries, oldestKey)
+	}
+	c.entries[key] = cacheEntry{
+		addresses: append([]netip.Addr(nil), addresses...),
+		expires:   now.Add(c.ttl),
+		used:      now,
+	}
+}
+
+func (c *Cache) Invalidate(key string) {
+	c.mu.Lock()
+	delete(c.entries, key)
+	c.mu.Unlock()
+}
+
+func (c *Cache) Clear() {
+	c.mu.Lock()
+	c.entries = make(map[string]cacheEntry)
+	c.mu.Unlock()
+}
+
+// Resolver resolves DoH endpoint hostnames through ordered IP bootstrap
+// resolvers. Lookup is intentionally explicit so no system resolver fallback
+// can occur when encrypted DNS is selected.
+type Resolver struct {
+	Resolvers []netip.Addr
+	Timeout   time.Duration
+	Cache     *Cache
+	Lookup    LookupFunc
+}
+
+func NewResolver(resolvers []netip.Addr) *Resolver {
+	if len(resolvers) == 0 {
+		resolvers = DefaultResolvers()
+	}
+	return &Resolver{Resolvers: append([]netip.Addr(nil), resolvers...), Timeout: DefaultTimeout, Cache: NewCache(DefaultCacheTTL, DefaultCacheLimit)}
+}
+
+func validateEndpoint(endpoint string) (*url.URL, error) {
+	parsed, err := url.ParseRequestURI(endpoint)
+	if err != nil || !strings.EqualFold(parsed.Scheme, "https") || parsed.Hostname() == "" {
+		return nil, fmt.Errorf("invalid HTTPS DoH endpoint %q", endpoint)
+	}
+	return parsed, nil
+}
+
+// ResolveEndpoint returns ordered IP candidates for endpoint. IP-literal
+// endpoints bypass bootstrap and are returned directly.
+func (r *Resolver) ResolveEndpoint(ctx context.Context, endpoint string) ([]netip.Addr, error) {
+	parsed, err := validateEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	host := parsed.Hostname()
+	if address, err := netip.ParseAddr(host); err == nil {
+		return []netip.Addr{address}, nil
+	}
+	cacheKey := strings.ToLower(host)
+	if r.Cache != nil {
+		if addresses, ok := r.Cache.Get(cacheKey); ok {
+			return addresses, nil
+		}
+	}
+	timeout := r.Timeout
+	if timeout <= 0 {
+		timeout = DefaultTimeout
+	}
+	resolveCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	lookup := r.Lookup
+	if lookup == nil {
+		lookup = lookupWithResolver
+	}
+	var failures []string
+	for _, resolver := range r.Resolvers {
+		if !resolver.IsValid() {
+			failures = append(failures, "invalid resolver address")
+			continue
+		}
+		addresses, lookupErr := lookup(resolveCtx, resolver, host)
+		if lookupErr != nil {
+			failures = append(failures, fmt.Sprintf("%s: %v", resolver, lookupErr))
+			if resolveCtx.Err() != nil {
+				break
+			}
+			continue
+		}
+		addresses = uniqueAddresses(addresses)
+		if len(addresses) == 0 {
+			failures = append(failures, fmt.Sprintf("%s: no addresses", resolver))
+			continue
+		}
+		if r.Cache != nil {
+			r.Cache.Put(cacheKey, addresses)
+		}
+		return addresses, nil
+	}
+	if resolveCtx.Err() != nil {
+		return nil, fmt.Errorf("bootstrap resolution for %q failed: %w", host, resolveCtx.Err())
+	}
+	return nil, fmt.Errorf("bootstrap resolution for %q failed: %s", host, strings.Join(failures, "; "))
+}
+
+// InvalidateEndpoint removes a cached hostname after a tunnel/network change.
+func (r *Resolver) InvalidateEndpoint(endpoint string) {
+	if r.Cache == nil {
+		return
+	}
+	parsed, err := validateEndpoint(endpoint)
+	if err == nil {
+		r.Cache.Invalidate(strings.ToLower(parsed.Hostname()))
+	}
+}
+
+// InvalidateAll removes all cached endpoint addresses.
+func (r *Resolver) InvalidateAll() {
+	if r.Cache != nil {
+		r.Cache.Clear()
+	}
+}
+
+func uniqueAddresses(addresses []netip.Addr) []netip.Addr {
+	seen := make(map[netip.Addr]struct{}, len(addresses))
+	unique := make([]netip.Addr, 0, len(addresses))
+	for _, address := range addresses {
+		if !address.IsValid() {
+			continue
+		}
+		if _, ok := seen[address]; ok {
+			continue
+		}
+		seen[address] = struct{}{}
+		unique = append(unique, address)
+	}
+	return unique
+}
+
+func lookupWithResolver(ctx context.Context, resolver netip.Addr, host string) ([]netip.Addr, error) {
+	resolverConfig := &net.Resolver{
+		PreferGo:     true,
+		StrictErrors: true,
+		Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, network, net.JoinHostPort(resolver.String(), "53"))
+		},
+	}
+	addresses, err := resolverConfig.LookupNetIP(ctx, "ip", host)
+	if err != nil {
+		return nil, err
+	}
+	return uniqueAddresses(addresses), nil
+}
