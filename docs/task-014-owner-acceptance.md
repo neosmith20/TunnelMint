@@ -227,7 +227,7 @@ pass. All three Windows client architectures rebuilt, and the rebuilt amd64
 installation, and a third live DoH retry before any DoH acceptance item can be
 marked passed.
 
-## DoH transport diagnostic pending
+## DoH transport diagnostic evidence
 
 The third DoH retry produced the same bounded transport timeout. No additional
 code change is claimed from that result. The next evidence step is the
@@ -236,5 +236,21 @@ working plain-DNS tunnel is active. It records only service/adapter counts,
 route counts, TCP/HTTPS success categories, and tunnel adapter byte deltas;
 it does not read or report the owner configuration, tunnel name, endpoint IPs,
 or keys.
+
+The owner completed the initial probe with the known-good plain-DNS tunnel
+active. It observed one running TunnelMint tunnel service, one active
+TunnelMint adapter, and four adapter routes. TCP port 443 to the configured
+DoH host connected, and the direct HTTPS DoH POST returned HTTP 200. The
+adapter counters increased during both probes, which is evidence that the
+plain-tunnel test exchanged traffic while the checks ran.
+
+That initial helper wrote the counter increases under unintended `sent` and
+`received` result properties instead of its documented
+`tunnelAdapter*BytesDelta` properties. It did not log configuration contents,
+keys, tunnel aliases, or endpoint addresses. The helper is corrected and now
+also records only aggregate route ownership for resolved endpoint candidates;
+a repeat with the same plain-DNS tunnel is required before using it to draw a
+route-selection conclusion. The direct endpoint success alone does not
+establish that the TunnelMint service's DoH startup path is working.
 
 No beta-readiness or production-readiness claim is made.
