@@ -9,8 +9,10 @@ package doh
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"mime"
 	"net"
 	"net/http"
@@ -104,21 +106,71 @@ func NewHTTPClientForAddresses(addresses []netip.Addr, base *http.Client) *http.
 		if err != nil {
 			port = "443"
 		}
-		if len(addresses) == 0 {
-			return nil, fmt.Errorf("no bootstrapped endpoint addresses available")
-		}
-		var lastErr error
-		for _, candidate := range addresses {
-			conn, err := (&net.Dialer{}).DialContext(ctx, network, net.JoinHostPort(candidate.String(), port))
-			if err == nil {
-				return conn, nil
-			}
-			lastErr = err
-		}
-		return nil, fmt.Errorf("unable to dial bootstrapped endpoint: %w", lastErr)
+		return dialBootstrappedAddresses(ctx, network, port, addresses, (&net.Dialer{}).DialContext)
 	}
 	client.Transport = transport
 	return client
+}
+
+// dialBootstrappedAddresses gives every endpoint candidate an opportunity to
+// connect within the request's existing deadline. Without per-candidate
+// budgets, an unavailable IPv6 address can consume the whole deadline before
+// a reachable IPv4 address is attempted.
+func dialBootstrappedAddresses(ctx context.Context, network, port string, addresses []netip.Addr, dial func(context.Context, string, string) (net.Conn, error)) (net.Conn, error) {
+	if len(addresses) == 0 {
+		return nil, fmt.Errorf("no bootstrapped endpoint addresses available")
+	}
+	deadline, hasDeadline := ctx.Deadline()
+	var lastErr error
+	for index, candidate := range addresses {
+		log.Printf("DoH transport dialing bootstrapped candidate %d of %d (%s)", index+1, len(addresses), dohAddressFamily(candidate))
+		attemptCtx := ctx
+		cancel := func() {}
+		if hasDeadline {
+			remaining := len(addresses) - index
+			budget := time.Until(deadline) / time.Duration(remaining)
+			if budget <= 0 {
+				break
+			}
+			attemptCtx, cancel = context.WithTimeout(ctx, budget)
+		}
+		conn, err := dial(attemptCtx, network, net.JoinHostPort(candidate.String(), port))
+		cancel()
+		if err == nil {
+			log.Printf("DoH transport connected to bootstrapped candidate %d of %d (%s)", index+1, len(addresses), dohAddressFamily(candidate))
+			return conn, nil
+		}
+		log.Printf("DoH transport candidate %d of %d (%s) failed: %s", index+1, len(addresses), dohAddressFamily(candidate), dohDialFailureCategory(err))
+		lastErr = err
+		if ctx.Err() != nil {
+			break
+		}
+	}
+	if lastErr == nil {
+		lastErr = ctx.Err()
+	}
+	return nil, fmt.Errorf("unable to dial bootstrapped endpoint: %w", lastErr)
+}
+
+func dohAddressFamily(address netip.Addr) string {
+	if address.Is4() {
+		return "IPv4"
+	}
+	return "IPv6"
+}
+
+func dohDialFailureCategory(err error) string {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "timeout"
+	}
+	if errors.Is(err, context.Canceled) {
+		return "canceled"
+	}
+	var networkErr net.Error
+	if errors.As(err, &networkErr) && networkErr.Timeout() {
+		return "timeout"
+	}
+	return "network-error"
 }
 
 // Query sends query as a DNS-over-HTTPS POST and returns the raw DNS response.

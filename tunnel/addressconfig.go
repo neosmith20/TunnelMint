@@ -162,6 +162,37 @@ startOver:
 	return nil
 }
 
+func configuredInterfaceFamilies(conf *conf.Config) []winipcfg.AddressFamily {
+	if conf == nil {
+		return nil
+	}
+	families := make(map[winipcfg.AddressFamily]bool, 2)
+	for _, address := range conf.Interface.Addresses {
+		if address.Addr().Is4() {
+			families[windows.AF_INET] = true
+		} else if address.Addr().Is6() {
+			families[windows.AF_INET6] = true
+		}
+	}
+	for _, peer := range conf.Peers {
+		for _, allowed := range peer.AllowedIPs {
+			if allowed.Addr().Is4() {
+				families[windows.AF_INET] = true
+			} else if allowed.Addr().Is6() {
+				families[windows.AF_INET6] = true
+			}
+		}
+	}
+	result := make([]winipcfg.AddressFamily, 0, len(families))
+	if families[windows.AF_INET] {
+		result = append(result, windows.AF_INET)
+	}
+	if families[windows.AF_INET6] {
+		result = append(result, windows.AF_INET6)
+	}
+	return result
+}
+
 func shouldNotRestrictFirewall(conf *conf.Config) bool {
 	doNotRestrict := true
 	if len(conf.Peers) == 1 && !conf.Interface.TableOff {

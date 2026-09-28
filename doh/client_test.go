@@ -9,8 +9,10 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +20,12 @@ import (
 
 var testDNSQuery = []byte{0x12, 0x34, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 0x00, 0x00, 0x01, 0x00, 0x01}
 var testDNSResponse = []byte{0x12, 0x34, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01}
+
+type testTimeoutError struct{}
+
+func (testTimeoutError) Error() string   { return "timed out" }
+func (testTimeoutError) Timeout() bool   { return true }
+func (testTimeoutError) Temporary() bool { return true }
 
 func newTLSServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *http.Client) {
 	t.Helper()
@@ -111,6 +119,61 @@ func TestQueryTimeoutAndCancellation(t *testing.T) {
 	_, err = doh.Query(ctx, testDNSQuery)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancellation error = %v", err)
+	}
+}
+
+func TestDialBootstrappedAddressesFallsBackWithinRequestDeadline(t *testing.T) {
+	first := netip.MustParseAddr("2001:db8::1")
+	second := netip.MustParseAddr("192.0.2.1")
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	var calls []netip.Addr
+	conn, err := dialBootstrappedAddresses(ctx, "tcp", "443", []netip.Addr{first, second}, func(ctx context.Context, _ string, address string) (net.Conn, error) {
+		host, _, splitErr := net.SplitHostPort(address)
+		if splitErr != nil {
+			return nil, splitErr
+		}
+		candidate, parseErr := netip.ParseAddr(host)
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		calls = append(calls, candidate)
+		if candidate == first {
+			<-ctx.Done()
+			return nil, ctx.Err()
+		}
+		client, server := net.Pipe()
+		server.Close()
+		return client, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if len(calls) != 2 || calls[0] != first || calls[1] != second {
+		t.Fatalf("dial candidates = %v, want [%v %v]", calls, first, second)
+	}
+}
+
+func TestDoHTransportDiagnosticCategoriesAvoidAddressData(t *testing.T) {
+	if got := dohAddressFamily(netip.MustParseAddr("192.0.2.1")); got != "IPv4" {
+		t.Fatalf("IPv4 family = %q", got)
+	}
+	if got := dohAddressFamily(netip.MustParseAddr("2001:db8::1")); got != "IPv6" {
+		t.Fatalf("IPv6 family = %q", got)
+	}
+	for _, test := range []struct {
+		err  error
+		want string
+	}{
+		{context.DeadlineExceeded, "timeout"},
+		{context.Canceled, "canceled"},
+		{testTimeoutError{}, "timeout"},
+		{errors.New("unreachable"), "network-error"},
+	} {
+		if got := dohDialFailureCategory(test.err); got != test.want {
+			t.Errorf("failure category for %v = %q, want %q", test.err, got, test.want)
+		}
 	}
 }
 

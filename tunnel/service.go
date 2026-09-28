@@ -236,6 +236,13 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 		return
 	}
 	watcher.Configure(adapter, config, luid)
+	if encryptedDNSConfigured(config) {
+		log.Println("Waiting for initial interface configuration before encrypted DNS startup")
+		serviceError, err = watcher.WaitForInitialConfiguration(configuredInterfaceFamilies(config))
+		if err != nil {
+			return
+		}
+	}
 
 	log.Println("Starting encrypted DNS runtime")
 	encryptedDNSSession, err = activateEncryptedDNS(context.Background(), config, luid, adapter, configuredBootstrap)
@@ -255,9 +262,14 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 		return
 	}
 
-	changes <- svc.Status{State: serviceState, Accepts: svc.AcceptStop | svc.AcceptShutdown}
-
-	var started bool
+	started := encryptedDNSConfigured(config)
+	if started {
+		serviceState = svc.Running
+		changes <- svc.Status{State: serviceState, Accepts: svc.AcceptStop | svc.AcceptShutdown}
+		log.Println("Startup complete")
+	} else {
+		changes <- svc.Status{State: serviceState, Accepts: svc.AcceptStop | svc.AcceptShutdown}
+	}
 	for {
 		select {
 		case c := <-r:

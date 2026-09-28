@@ -5,21 +5,24 @@
 
 package fips140
 
+import "errors"
+
 const (
 	Enabled = false
 	debug   = false
 )
 
 func Supported() error {
-	panic("")
+	return errors.New("FIPS 140-3 mode is unavailable in this build")
 }
 
 func Name() string {
-	panic("")
+	return "Go Cryptographic Module"
 }
 
 func Version() string {
-	panic("")
+	// crypto/tls checks this value even when FIPS mode is disabled.
+	return "latest"
 }
 
 // CAST matches the disabled-FIPS behavior of Go 1.27.1: self-tests are not
@@ -35,9 +38,8 @@ func RecordApproved() {}
 func RecordNonApproved() {}
 
 func ResetServiceIndicator() {
-	panic("")
 }
 
 func ServiceIndicator() bool {
-	panic("")
+	return false
 }
