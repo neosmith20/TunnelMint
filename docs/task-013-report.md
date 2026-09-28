@@ -43,4 +43,4 @@ An elevated disposable Windows system with a real WireGuard peer is still requir
 
 ## Commit
 
-The implementation commit and the final report commit are recorded by `git log` on this branch and in the pull request before review.
+Hardening implementation: `515f6db` (`Harden Windows v1 before owner acceptance`). The report update is the subsequent documentation commit at the branch head.
