@@ -227,4 +227,14 @@ pass. All three Windows client architectures rebuilt, and the rebuilt amd64
 installation, and a third live DoH retry before any DoH acceptance item can be
 marked passed.
 
+## DoH transport diagnostic pending
+
+The third DoH retry produced the same bounded transport timeout. No additional
+code change is claimed from that result. The next evidence step is the
+sanitized `scripts/task014-doh-connectivity.ps1` probe while the previously
+working plain-DNS tunnel is active. It records only service/adapter counts,
+route counts, TCP/HTTPS success categories, and tunnel adapter byte deltas;
+it does not read or report the owner configuration, tunnel name, endpoint IPs,
+or keys.
+
 No beta-readiness or production-readiness claim is made.
