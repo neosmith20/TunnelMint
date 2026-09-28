@@ -145,6 +145,14 @@ installation, manager-service, update-smoke, and normal-startup checks on the
 real acceptance VM. The installed product files and the existing official
 WireGuard installation remain present as previously recorded.
 
+The installed-program registry identifies the product as `TunnelMint
+Development` version `0.1.0`, published by `TunnelMint contributors`; the
+side-by-side package remains `WireGuard` version `1.1.1`, published by
+`WireGuard LLC`. The common Start Menu contains separate `TunnelMint.lnk` and
+`WireGuard.lnk` entries. The installed TunnelMint notices directory contains
+`LICENSE`, `GPL-2.0.txt`, `THIRD_PARTY_NOTICES.md`, and
+`WIREGUARD-COPYING`.
+
 The owner configuration remains unread, unmodified, and absent from this
 repository. Live import, connection, traffic, DNS, DoH, leak, lifecycle,
 IPv6, and upgrade acceptance checks remain unexecuted and are not marked
