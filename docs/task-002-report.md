@@ -1,7 +1,8 @@
 # Task 002 completion report
 
 - Branch: `codex/dns-url-parsing`
-- Implementation commit: `9da41e50512e0580f6b4ef6a993332c476092a0a`
+- Implementation commits: `9da41e50512e0580f6b4ef6a993332c476092a0a`,
+  `a9deed4b4da66c0de4a52fcb61e4606dc7d54b3e`
 - Files changed: `conf/config.go`, `conf/parser.go`, `conf/parser_test.go`,
   `conf/writer.go`, `ui/confview.go`, and `ROADMAP.md`
 
