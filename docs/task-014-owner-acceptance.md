@@ -108,4 +108,20 @@ amd64 MSI, verify the installed `/update` smoke test and normal manager/UI
 startup, and continue the remaining real-machine checks without marking them
 passed until they are actually performed.
 
+## Current-main retest attempt
+
+Current `main` was pulled at merge commit
+`767a3ffb3719abe20f65bb2bb0013650fa90a3d7` (PR #8). It contains the merged
+startup fix. `cmd /c build.bat` and `cmd /c installer\build.bat` both
+succeeded on this VM, and the rebuilt `amd64\tunnelmint.exe /update` exited
+normally without the former FIPS/package-initialization panic.
+
+The existing pre-fix installation could not be removed from the agent's
+current process: the process has a non-elevated token, `RunAs` fails with
+`0xc0000142`, and MSI uninstall returns 1603 because the installer custom
+action `EvaluateTunnelMintServices` reports Windows Installer error 1719.
+The installed fixed-MSI `/update` and normal manager/UI checks therefore did
+not run. This is a Windows desktop-session access failure, not a TunnelMint
+product result. The owner configuration was not read, copied, or modified.
+
 No beta-readiness or production-readiness claim is made.
