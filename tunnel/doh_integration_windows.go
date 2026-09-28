@@ -10,6 +10,7 @@ package tunnel
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/netip"
@@ -89,17 +90,22 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 			if prefix.Addr().Is6() {
 				nextHop = netip.IPv6Unspecified()
 			}
-			var firstErr error
-			if ownedWindowsRoutes[prefix] {
+			windowsOwned := ownedWindowsRoutes[prefix]
+			if windowsOwned {
 				if err := luid.DeleteRoute(prefix, nextHop); err != nil && err != windows.ERROR_NOT_FOUND {
-					firstErr = err
+					return err
 				}
 			}
-			delete(ownedWindowsRoutes, prefix)
-			if err := peerRoutes.Delete(prefix); err != nil && firstErr == nil {
-				firstErr = err
+			if err := peerRoutes.Delete(prefix); err != nil {
+				if windowsOwned {
+					if restoreErr := luid.AddRoute(prefix, nextHop, 0); restoreErr != nil && restoreErr != windows.ERROR_OBJECT_ALREADY_EXISTS {
+						return errors.Join(err, fmt.Errorf("restore DoH host route after peer cleanup failure: %w", restoreErr))
+					}
+				}
+				return err
 			}
-			return firstErr
+			delete(ownedWindowsRoutes, prefix)
+			return nil
 		},
 		Verify: func(ctx context.Context, endpoint string, addresses []netip.Addr) error {
 			httpClient := doh.NewHTTPClientForAddresses(addresses, http.DefaultClient)
@@ -139,7 +145,10 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 			if err != nil {
 				return nil, err
 			}
-			if err := luid.SetDNS(windows.AF_INET, []netip.Addr{netip.MustParseAddr("127.0.0.1")}, config.Interface.DNSSearch); err != nil {
+			setLoopbackDNS := func() error {
+				return luid.SetDNS(windows.AF_INET, []netip.Addr{netip.MustParseAddr("127.0.0.1")}, config.Interface.DNSSearch)
+			}
+			if err := setLoopbackDNS(); err != nil {
 				return nil, err
 			}
 			return func() error {
@@ -151,6 +160,9 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 				}
 				return luid.SetDNS(windows.AF_INET, v4, config.Interface.DNSSearch)
 			}, nil
+		},
+		ReapplyDNS: func() error {
+			return luid.SetDNS(windows.AF_INET, []netip.Addr{netip.MustParseAddr("127.0.0.1")}, config.Interface.DNSSearch)
 		},
 		Finalize: func() error {
 			exceptions := []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")}

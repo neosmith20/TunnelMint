@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
+	"golang.zx2c4.com/wireguard/windows/bootstrap"
 	"golang.zx2c4.com/wireguard/windows/conf"
 	"golang.zx2c4.com/wireguard/windows/dohruntime"
 	"golang.zx2c4.com/wireguard/windows/driver"
@@ -155,7 +156,20 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 	}
 
 	log.Println("Resolving DNS names")
-	err = config.ResolveEndpoints()
+	if encryptedDNSConfigured(config) {
+		configuredBootstrap, err = configuredBootstrapResolvers()
+		if err != nil {
+			serviceError = services.ErrorSetNetConfig
+			return
+		}
+		resolver := bootstrap.NewResolver(configuredBootstrap)
+		resolver.Timeout = dohRuntimeTimeout
+		err = config.ResolveEndpointsWith(func(host string) ([]netip.Addr, error) {
+			return resolver.ResolveHost(context.Background(), host)
+		})
+	} else {
+		err = config.ResolveEndpoints()
+	}
 	if err != nil {
 		serviceError = services.ErrorDNSLookup
 		return
@@ -197,13 +211,6 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 		return
 	}
 
-	if encryptedDNSConfigured(config) {
-		configuredBootstrap, err = configuredBootstrapResolvers()
-		if err != nil {
-			serviceError = services.ErrorSetNetConfig
-			return
-		}
-	}
 	err = enableFirewall(config, luid, encryptedDNSConfigured(config), configuredBootstrap)
 	if err != nil {
 		serviceError = services.ErrorFirewall
@@ -235,6 +242,11 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 	if err != nil {
 		serviceError = services.ErrorSetNetConfig
 		return
+	}
+	if encryptedDNSSession != nil {
+		watcher.SetRecovery(func() error {
+			return encryptedDNSSession.Recover(context.Background())
+		})
 	}
 
 	err = runScriptCommand(config.Interface.PostUp, config.Name)

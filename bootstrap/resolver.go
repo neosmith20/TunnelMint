@@ -151,7 +151,17 @@ func (r *Resolver) ResolveEndpoint(ctx context.Context, endpoint string) ([]neti
 	if err != nil {
 		return nil, err
 	}
-	host := parsed.Hostname()
+	return r.ResolveHost(ctx, parsed.Hostname())
+}
+
+// ResolveHost returns ordered IP candidates for a hostname through the
+// configured bootstrap resolvers. It is used before a tunnel exists when a
+// peer endpoint must avoid the ordinary system resolver.
+func (r *Resolver) ResolveHost(ctx context.Context, host string) ([]netip.Addr, error) {
+	host = strings.TrimSpace(host)
+	if host == "" {
+		return nil, errors.New("bootstrap hostname is empty")
+	}
 	if address, err := netip.ParseAddr(host); err == nil {
 		return []netip.Addr{address}, nil
 	}

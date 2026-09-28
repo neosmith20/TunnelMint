@@ -42,20 +42,23 @@ type Hooks struct {
 	StartProxy   func(context.Context, string, []netip.Addr) (io.Closer, error)
 	ReplaceProxy func(context.Context, string, []netip.Addr, io.Closer) error
 	SetDNS       func() (restore func() error, err error)
+	ReapplyDNS   func() error
 	Finalize     func() error
 }
 
 type Session struct {
-	mu       sync.Mutex
-	stage    Stage
-	routes   []netip.Prefix
-	delRoute func(netip.Prefix) error
-	proxy    io.Closer
-	restore  func() error
-	hooks    Hooks
-	config   Config
-	closed   bool
-	lastErr  error
+	mu        sync.Mutex
+	opMu      sync.Mutex
+	stage     Stage
+	routes    []netip.Prefix
+	addresses []netip.Addr
+	delRoute  func(netip.Prefix) error
+	proxy     io.Closer
+	restore   func() error
+	hooks     Hooks
+	config    Config
+	closed    bool
+	lastErr   error
 }
 
 func Activate(ctx context.Context, config Config, hooks Hooks) (*Session, error) {
@@ -83,6 +86,7 @@ func Activate(ctx context.Context, config Config, hooks Hooks) (*Session, error)
 		return rollback(err)
 	}
 	s.stage = StageBootstrapped
+	s.addresses = append([]netip.Addr(nil), candidates...)
 	for _, address := range candidates {
 		prefix := netip.PrefixFrom(address, address.BitLen())
 		owned, err := hooks.AddRoute(prefix)
@@ -139,6 +143,8 @@ func (s *Session) LastError() error {
 // the proxy and TunnelMint-owned host routes to it. Existing DNS settings stay
 // in place while the replacement is prepared.
 func (s *Session) Refresh(ctx context.Context, candidates []netip.Addr) error {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	s.mu.Lock()
 	if s.closed || s.stage != StageReady {
 		s.mu.Unlock()
@@ -194,14 +200,60 @@ func (s *Session) Refresh(ctx context.Context, candidates []netip.Addr) error {
 		}
 		return fmt.Errorf("refresh local DNS proxy: %w", err)
 	}
+	var cleanupErrs []error
 	for route := range oldSet {
 		if err := hooks.DelRoute(route); err != nil {
-			return fmt.Errorf("remove stale DoH host route %s: %w", route, err)
+			newRoutes = append(newRoutes, route)
+			cleanupErrs = append(cleanupErrs, fmt.Errorf("remove stale DoH host route %s: %w", route, err))
 		}
 	}
 	s.mu.Lock()
-	s.routes = newRoutes
+	s.routes = append([]netip.Prefix(nil), newRoutes...)
+	s.addresses = append([]netip.Addr(nil), selected...)
 	s.mu.Unlock()
+	if len(cleanupErrs) > 0 {
+		return errors.Join(cleanupErrs...)
+	}
+	return nil
+}
+
+// Recover reapplies the live encrypted-DNS state after the platform watcher
+// has restored the adapter to its persisted configuration. The existing
+// listener remains in place while routes, transport, DNS, and firewall state
+// are checked again. A failure is returned so the owning tunnel service can
+// stop instead of reporting a stale ready state.
+func (s *Session) Recover(ctx context.Context) error {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
+	s.mu.Lock()
+	if s.closed || s.stage != StageReady {
+		s.mu.Unlock()
+		return errors.New("encrypted DNS session is not ready")
+	}
+	hooks, endpoint, addresses, routes, proxy := s.hooks, s.config.Endpoint, append([]netip.Addr(nil), s.addresses...), append([]netip.Prefix(nil), s.routes...), s.proxy
+	s.mu.Unlock()
+	if hooks.ReplaceProxy == nil || hooks.ReapplyDNS == nil {
+		return errors.New("encrypted DNS recovery hooks are incomplete")
+	}
+	for _, route := range routes {
+		if _, err := hooks.AddRoute(route); err != nil {
+			return fmt.Errorf("restore DoH host route %s: %w", route, err)
+		}
+	}
+	if err := hooks.Verify(ctx, endpoint, addresses); err != nil {
+		return fmt.Errorf("verify DoH transport after network recovery: %w", err)
+	}
+	if err := hooks.ReplaceProxy(ctx, endpoint, addresses, proxy); err != nil {
+		return fmt.Errorf("restore DoH proxy after network recovery: %w", err)
+	}
+	if err := hooks.ReapplyDNS(); err != nil {
+		return fmt.Errorf("restore Windows DNS after network recovery: %w", err)
+	}
+	if hooks.Finalize != nil {
+		if err := hooks.Finalize(); err != nil {
+			return fmt.Errorf("restore encrypted DNS firewall after network recovery: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -215,6 +267,8 @@ func containsPrefix(routes []netip.Prefix, want netip.Prefix) bool {
 }
 
 func (s *Session) Close() error {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
@@ -222,7 +276,7 @@ func (s *Session) Close() error {
 	}
 	s.closed = true
 	restore, proxy, delRoute, routes := s.restore, s.proxy, s.delRoute, append([]netip.Prefix(nil), s.routes...)
-	s.restore, s.proxy, s.delRoute, s.routes = nil, nil, nil, nil
+	s.restore, s.proxy, s.delRoute, s.routes, s.addresses = nil, nil, nil, nil, nil
 	s.mu.Unlock()
 
 	var firstErr error

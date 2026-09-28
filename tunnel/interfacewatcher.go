@@ -37,6 +37,7 @@ type interfaceWatcher struct {
 	conf    *conf.Config
 	adapter *driver.Adapter
 	luid    winipcfg.LUID
+	recover func() error
 
 	setupMutex              sync.Mutex
 	interfaceChangeCallback winipcfg.ChangeCallback
@@ -124,6 +125,11 @@ func watchInterface() (*interfaceWatcher, error) {
 				log.Println(fmt.Errorf("%v: %w", services.ErrorDeviceBringUp, err))
 			}
 		}
+		if iw.recover != nil {
+			if err := iw.recover(); err != nil {
+				iw.errors <- interfaceWatcherError{services.ErrorSetNetConfig, fmt.Errorf("recover encrypted DNS runtime: %w", err)}
+			}
+		}
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to register interface change callback: %w", err)
@@ -145,8 +151,15 @@ func (iw *interfaceWatcher) Configure(adapter *driver.Adapter, conf *conf.Config
 	iw.storedEvents = nil
 }
 
+func (iw *interfaceWatcher) SetRecovery(recover func() error) {
+	iw.setupMutex.Lock()
+	iw.recover = recover
+	iw.setupMutex.Unlock()
+}
+
 func (iw *interfaceWatcher) Destroy() {
 	iw.setupMutex.Lock()
+	iw.recover = nil
 	iw.watchdog.Stop()
 	changeCallbacks4 := iw.changeCallbacks4
 	changeCallbacks6 := iw.changeCallbacks6

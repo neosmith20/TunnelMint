@@ -6,6 +6,7 @@
 package conf
 
 import (
+	"fmt"
 	"log"
 	"net/netip"
 	"time"
@@ -83,15 +84,47 @@ func resolveHostnameOnce(name string) (resolvedIPString string, err error) {
 }
 
 func (config *Config) ResolveEndpoints() error {
+	return config.ResolveEndpointsWith(func(host string) ([]netip.Addr, error) {
+		resolved, err := resolveHostname(host)
+		if err != nil {
+			return nil, err
+		}
+		address, err := netip.ParseAddr(resolved)
+		if err != nil {
+			return nil, err
+		}
+		return []netip.Addr{address}, nil
+	})
+}
+
+// ResolveEndpointsWith resolves peer endpoint hostnames through an explicit
+// resolver. IP literals bypass the callback and endpoint ports are preserved.
+func (config *Config) ResolveEndpointsWith(resolve func(string) ([]netip.Addr, error)) error {
+	if resolve == nil {
+		return fmt.Errorf("endpoint resolver is unavailable")
+	}
 	for i := range config.Peers {
 		if config.Peers[i].Endpoint.IsEmpty() {
 			continue
 		}
-		var err error
-		config.Peers[i].Endpoint.Host, err = resolveHostname(config.Peers[i].Endpoint.Host)
-		if err != nil {
-			return err
+		if _, err := netip.ParseAddr(config.Peers[i].Endpoint.Host); err == nil {
+			continue
 		}
+		addresses, err := resolve(config.Peers[i].Endpoint.Host)
+		if err != nil {
+			return fmt.Errorf("resolve peer endpoint %q: %w", config.Peers[i].Endpoint.Host, err)
+		}
+		var resolved netip.Addr
+		for _, address := range addresses {
+			if address.IsValid() && !address.IsUnspecified() && !address.IsMulticast() {
+				resolved = address
+				break
+			}
+		}
+		if !resolved.IsValid() {
+			return fmt.Errorf("resolve peer endpoint %q: no usable addresses", config.Peers[i].Endpoint.Host)
+		}
+		config.Peers[i].Endpoint.Host = resolved.String()
 	}
 	return nil
 }

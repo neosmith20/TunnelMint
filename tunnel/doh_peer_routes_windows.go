@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"sort"
 	"sync"
 	"unsafe"
 
@@ -57,26 +58,44 @@ func selectDoHPeer(config *conf.Config, addresses []netip.Addr) (int, bool, erro
 }
 
 type dohPeerRouteManager struct {
-	adapter *driver.Adapter
-	config  *conf.Config
-	mu      sync.Mutex
-	active  map[netip.Prefix]struct{}
+	adapter          *driver.Adapter
+	config           *conf.Config
+	setConfiguration func(*driver.Adapter, *driver.Interface, uint32) error
+	mu               sync.Mutex
+	active           map[netip.Prefix]struct{}
+	peerIndex        int
 }
 
 func newDoHPeerRouteManager(adapter *driver.Adapter, config *conf.Config) *dohPeerRouteManager {
-	return &dohPeerRouteManager{adapter: adapter, config: config, active: make(map[netip.Prefix]struct{})}
+	return &dohPeerRouteManager{
+		adapter:   adapter,
+		config:    config,
+		active:    make(map[netip.Prefix]struct{}),
+		peerIndex: -1,
+		setConfiguration: func(adapter *driver.Adapter, interfaze *driver.Interface, size uint32) error {
+			return adapter.SetConfiguration(interfaze, size)
+		},
+	}
 }
 
 func (m *dohPeerRouteManager) Add(prefix netip.Prefix) (bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if !prefix.IsValid() {
+		return false, errors.New("invalid DoH endpoint route prefix")
+	}
 	if m.coveredByConfig(prefix.Addr()) {
 		return false, nil
 	}
-	m.active[prefix] = struct{}{}
-	if err := m.apply(); err != nil {
-		delete(m.active, prefix)
+	next := clonePrefixes(m.active)
+	next[prefix] = struct{}{}
+	peerIndex, err := m.apply(next)
+	if err != nil {
 		return false, err
+	}
+	m.active = next
+	if peerIndex >= 0 {
+		m.peerIndex = peerIndex
 	}
 	return true, nil
 }
@@ -87,11 +106,25 @@ func (m *dohPeerRouteManager) Delete(prefix netip.Prefix) error {
 	if _, ok := m.active[prefix]; !ok {
 		return nil
 	}
-	delete(m.active, prefix)
-	return m.apply()
+	next := clonePrefixes(m.active)
+	delete(next, prefix)
+	peerIndex, err := m.apply(next)
+	if err != nil {
+		return err
+	}
+	m.active = next
+	if len(next) == 0 {
+		m.peerIndex = -1
+	} else if peerIndex >= 0 {
+		m.peerIndex = peerIndex
+	}
+	return nil
 }
 
 func (m *dohPeerRouteManager) coveredByConfig(address netip.Addr) bool {
+	if m.config == nil {
+		return false
+	}
 	for _, peer := range m.config.Peers {
 		for _, allowed := range peer.AllowedIPs {
 			if allowed.Contains(address) {
@@ -102,20 +135,39 @@ func (m *dohPeerRouteManager) coveredByConfig(address netip.Addr) bool {
 	return false
 }
 
-func (m *dohPeerRouteManager) apply() error {
-	addresses := make([]netip.Addr, 0, len(m.active))
-	for prefix := range m.active {
-		addresses = append(addresses, prefix.Addr())
+func (m *dohPeerRouteManager) apply(active map[netip.Prefix]struct{}) (int, error) {
+	if len(active) == 0 && m.peerIndex < 0 {
+		return -1, nil
 	}
-	peerIndex, needsRoute, err := selectDoHPeer(m.config, addresses)
-	if err != nil {
-		return err
+	if m.config == nil || len(m.config.Peers) == 0 {
+		return -1, errors.New("encrypted DNS requires a configured WireGuard peer")
 	}
-	if !needsRoute {
-		return nil
+	peerIndex := m.peerIndex
+	needsRoute := len(active) > 0
+	if needsRoute {
+		addresses := make([]netip.Addr, 0, len(active))
+		for prefix := range active {
+			addresses = append(addresses, prefix.Addr())
+		}
+		selected, selectedNeedsRoute, err := selectDoHPeer(m.config, addresses)
+		if err != nil {
+			return -1, err
+		}
+		if !selectedNeedsRoute {
+			return -1, nil
+		}
+		if peerIndex >= 0 && selected != peerIndex {
+			return -1, fmt.Errorf("DoH endpoint peer changed from %d to %d", peerIndex, selected)
+		}
+		peerIndex = selected
 	}
 	allowed := append([]netip.Prefix(nil), m.config.Peers[peerIndex].AllowedIPs...)
-	for prefix := range m.active {
+	activePrefixes := make([]netip.Prefix, 0, len(active))
+	for prefix := range active {
+		activePrefixes = append(activePrefixes, prefix)
+	}
+	sort.Slice(activePrefixes, func(i, j int) bool { return activePrefixes[i].String() < activePrefixes[j].String() })
+	for _, prefix := range activePrefixes {
 		found := false
 		for _, existing := range allowed {
 			if existing == prefix {
@@ -147,8 +199,19 @@ func (m *dohPeerRouteManager) apply() error {
 		builder.AppendAllowedIP(address)
 	}
 	interfaze, size := builder.Interface()
-	if err := m.adapter.SetConfiguration(interfaze, size); err != nil {
-		return fmt.Errorf("update WireGuard peer AllowedIPs for DoH endpoint: %w", err)
+	if m.setConfiguration == nil {
+		return -1, errors.New("WireGuard peer configuration updater is unavailable")
 	}
-	return nil
+	if err := m.setConfiguration(m.adapter, interfaze, size); err != nil {
+		return -1, fmt.Errorf("update WireGuard peer AllowedIPs for DoH endpoint: %w", err)
+	}
+	return peerIndex, nil
+}
+
+func clonePrefixes(prefixes map[netip.Prefix]struct{}) map[netip.Prefix]struct{} {
+	clone := make(map[netip.Prefix]struct{}, len(prefixes))
+	for prefix := range prefixes {
+		clone[prefix] = struct{}{}
+	}
+	return clone
 }

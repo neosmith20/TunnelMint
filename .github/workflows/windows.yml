@@ -27,6 +27,10 @@ jobs:
         shell: pwsh
         run: |
           go test -vet=off ./bootstrap ./dnsproxy ./doh ./dohruntime ./product
+          # These packages contain deterministic Task 013/015 hardening tests.
+          # Privileged adapter, DPAPI, service, and storage tests stay out of
+          # hosted CI because they require an installed/elevated Windows VM.
+          go test -vet=off ./tunnel ./tunnel/firewall ./manager ./ui
           go test -vet=off ./conf -run 'Test(DNSParsing|DNSRoundTripPreservesDoH|DNSURLValidation|FromWgQuick)$'
 
       - name: Build Windows client
