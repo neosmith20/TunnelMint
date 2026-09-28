@@ -59,11 +59,11 @@ Add a simple Settings area for bootstrap DNS.
 
 ## Phase 5 — TunnelMint UI
 
-- [ ] Keep tunnel import, activation, status, and editing simple.
-- [ ] Make the interface visually distinct and clearly TunnelMint.
-- [ ] Display whether DNS is plain or encrypted.
-- [ ] Show basic tunnel, handshake, traffic, and DNS status.
-- [ ] Keep the interface uncluttered.
+- [x] Keep tunnel import, activation, status, and editing simple.
+- [x] Make the interface visually distinct and clearly TunnelMint.
+- [x] Display whether DNS is plain or encrypted.
+- [x] Show basic tunnel, handshake, traffic, and DNS status.
+- [x] Keep the interface uncluttered.
 
 **Exit criteria:** The client is simple enough to install, import a tunnel, and connect without documentation.
 
