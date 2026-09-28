@@ -7,6 +7,7 @@ package tunnel
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 	"golang.zx2c4.com/wireguard/windows/conf"
+	"golang.zx2c4.com/wireguard/windows/dohruntime"
 	"golang.zx2c4.com/wireguard/windows/driver"
 	"golang.zx2c4.com/wireguard/windows/elevate"
 	"golang.zx2c4.com/wireguard/windows/ringlogger"
@@ -36,6 +38,7 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 	var adapter *driver.Adapter
 	var luid winipcfg.LUID
 	var config *conf.Config
+	var encryptedDNSSession *dohruntime.Session
 	var err error
 	serviceError := services.ErrorSuccess
 
@@ -80,6 +83,11 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 			}
 		}()
 
+		if encryptedDNSSession != nil {
+			if err := encryptedDNSSession.Close(); err != nil && logErr == nil {
+				logErr = fmt.Errorf("unable to restore encrypted DNS state: %w", err)
+			}
+		}
 		if logErr == nil && adapter != nil && config != nil {
 			logErr = runScriptCommand(config.Interface.PreDown, config.Name)
 		}
@@ -212,6 +220,13 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 		return
 	}
 	watcher.Configure(adapter, config, luid)
+
+	log.Println("Starting encrypted DNS runtime")
+	encryptedDNSSession, err = activateEncryptedDNS(context.Background(), config, luid)
+	if err != nil {
+		serviceError = services.ErrorSetNetConfig
+		return
+	}
 
 	err = runScriptCommand(config.Interface.PostUp, config.Name)
 	if err != nil {

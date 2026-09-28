@@ -184,6 +184,11 @@ func (p *Proxy) Stop() error {
 	return nil
 }
 
+// Close stops the proxy and implements io.Closer for lifecycle integration.
+func (p *Proxy) Close() error {
+	return p.Stop()
+}
+
 func (p *Proxy) Status() Status {
 	p.mu.Lock()
 	defer p.mu.Unlock()
