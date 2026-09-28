@@ -32,4 +32,4 @@ The full `./conf` package remains environment-bound: inherited storage tests fai
 
 Real peer traffic, packet capture, install/service/manager behavior, reboot, sleep/wake, network transitions, IPv6, and upstream WireGuard coexistence still require the elevated disposable Windows owner environment described by Task 014. The branch does not claim production readiness.
 
-GitHub Actions CI is expected to run after the branch is pushed; its completed run URL and result will be recorded here before the pull request is handed off.
+GitHub Actions Windows validation passed on the pushed implementation at [run 36382538291](https://github.com/neosmith20/TunnelMint/actions/runs/36382538291). The separate repository-managed Code scanning AI findings job failed in its external processing step and did not report a source finding; it is outside the supported Task 015 workflow.
