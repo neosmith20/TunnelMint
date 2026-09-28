@@ -103,6 +103,106 @@ func TestFromWgQuick(t *testing.T) {
 	}
 }
 
+func dnsConfig(value string) string {
+	return "[Interface]\nPrivateKey = yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=\nDNS = " + value + "\n"
+}
+
+func TestDNSParsing(t *testing.T) {
+	tests := []struct {
+		name       string
+		value      string
+		wantDNS    []netip.Addr
+		wantDoH    []string
+		wantSearch []string
+	}{
+		{
+			name:    "IPv4",
+			value:   "1.1.1.1",
+			wantDNS: []netip.Addr{netip.MustParseAddr("1.1.1.1")},
+		},
+		{
+			name:    "multiple IPv4",
+			value:   "1.1.1.1, 1.0.0.1",
+			wantDNS: []netip.Addr{netip.MustParseAddr("1.1.1.1"), netip.MustParseAddr("1.0.0.1")},
+		},
+		{
+			name:    "IPv6",
+			value:   "2606:4700:4700::1111",
+			wantDNS: []netip.Addr{netip.MustParseAddr("2606:4700:4700::1111")},
+		},
+		{
+			name:    "DoH",
+			value:   "https://dns.example.com/dns-query",
+			wantDoH: []string{"https://dns.example.com/dns-query"},
+		},
+		{
+			name:    "DoH provider path",
+			value:   "https://dns.example.com/dns-query/client-id",
+			wantDoH: []string{"https://dns.example.com/dns-query/client-id"},
+		},
+		{
+			name:       "search suffix remains supported",
+			value:      "home.arpa",
+			wantSearch: []string{"home.arpa"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			conf, err := FromWgQuick(dnsConfig(test.value), "test")
+			if !noError(t, err) {
+				return
+			}
+			equal(t, test.wantDNS, conf.Interface.DNS)
+			equal(t, test.wantDoH, conf.Interface.DNSOverHTTPS)
+			equal(t, test.wantSearch, conf.Interface.DNSSearch)
+		})
+	}
+}
+
+func TestDNSRoundTripPreservesDoH(t *testing.T) {
+	const endpoint = "https://dns.example.com/dns-query/client-id"
+	conf, err := FromWgQuick(dnsConfig(endpoint), "test")
+	if !noError(t, err) {
+		return
+	}
+	serialized := conf.ToWgQuick()
+	if !strings.Contains(serialized, "DNS = "+endpoint+"\n") {
+		t.Fatalf("serialized config lost DoH endpoint:\n%s", serialized)
+	}
+	reparsed, err := FromWgQuick(serialized, "test")
+	if !noError(t, err) {
+		return
+	}
+	equal(t, []string{endpoint}, reparsed.Interface.DNSOverHTTPS)
+	equal(t, serialized, reparsed.ToWgQuick())
+}
+
+func TestDNSURLValidation(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{name: "missing host", value: "https://", want: "Invalid DNS URL"},
+		{name: "missing hostname", value: "https://:443/dns-query", want: "Invalid DNS URL"},
+		{name: "invalid host", value: "https://dns example/dns-query", want: "Invalid DNS URL"},
+		{name: "http", value: "http://dns.example.com/dns-query", want: "Unsupported DNS URL scheme"},
+		{name: "dot", value: "tls://dns.example.com", want: "Unsupported DNS URL scheme"},
+		{name: "quic", value: "quic://dns.example.com", want: "Unsupported DNS URL scheme"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := FromWgQuick(dnsConfig(test.value), "test")
+			if err == nil {
+				t.Fatalf("expected %q to fail", test.value)
+			}
+			if !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("error %q does not contain %q", err, test.want)
+			}
+		})
+	}
+}
+
 func TestComments(t *testing.T) {
 	const input = `# top of file
 # second line

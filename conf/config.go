@@ -41,17 +41,18 @@ type Config struct {
 }
 
 type Interface struct {
-	PrivateKey Key
-	Addresses  []netip.Prefix
-	ListenPort uint16
-	MTU        uint16
-	DNS        []netip.Addr
-	DNSSearch  []string
-	PreUp      string
-	PostUp     string
-	PreDown    string
-	PostDown   string
-	TableOff   bool
+	PrivateKey   Key
+	Addresses    []netip.Prefix
+	ListenPort   uint16
+	MTU          uint16
+	DNS          []netip.Addr
+	DNSOverHTTPS []string
+	DNSSearch    []string
+	PreUp        string
+	PostUp       string
+	PreDown      string
+	PostDown     string
+	TableOff     bool
 
 	Comments SectionComments
 }

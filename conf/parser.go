@@ -8,6 +8,7 @@ package conf
 import (
 	"encoding/base64"
 	"net/netip"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -116,6 +117,29 @@ func parseTableOff(s string) (bool, error) {
 	}
 	_, err := strconv.ParseUint(s, 10, 32)
 	return false, err
+}
+
+func parseDNS(s string) (netip.Addr, string, error) {
+	addr, err := netip.ParseAddr(s)
+	if err == nil {
+		return addr, "", nil
+	}
+
+	parsed, urlErr := url.ParseRequestURI(s)
+	looksLikeURL := strings.Contains(s, "://") || (urlErr == nil && parsed.Scheme != "")
+	if !looksLikeURL {
+		return netip.Addr{}, "", nil
+	}
+	if urlErr != nil {
+		return netip.Addr{}, "", &ParseError{l18n.Sprintf("Invalid DNS URL"), s}
+	}
+	if !strings.EqualFold(parsed.Scheme, "https") {
+		return netip.Addr{}, "", &ParseError{l18n.Sprintf("Unsupported DNS URL scheme"), parsed.Scheme}
+	}
+	if parsed.Hostname() == "" {
+		return netip.Addr{}, "", &ParseError{l18n.Sprintf("Invalid DNS URL"), s}
+	}
+	return netip.Addr{}, s, nil
 }
 
 func parseKeyBase64(s string) (*Key, error) {
@@ -282,11 +306,16 @@ func FromWgQuick(s, name string) (*Config, error) {
 					return nil, err
 				}
 				for _, address := range addresses {
-					a, err := netip.ParseAddr(address)
+					a, doh, err := parseDNS(address)
 					if err != nil {
-						conf.Interface.DNSSearch = append(conf.Interface.DNSSearch, address)
-					} else {
+						return nil, err
+					}
+					if len(doh) != 0 {
+						conf.Interface.DNSOverHTTPS = append(conf.Interface.DNSOverHTTPS, doh)
+					} else if a.IsValid() {
 						conf.Interface.DNS = append(conf.Interface.DNS, a)
+					} else {
+						conf.Interface.DNSSearch = append(conf.Interface.DNSSearch, address)
 					}
 				}
 			case "preup":
@@ -424,15 +453,16 @@ func FromDriverConfiguration(interfaze *driver.Interface, existingConfig *Config
 	conf := Config{
 		Name: existingConfig.Name,
 		Interface: Interface{
-			Addresses: existingConfig.Interface.Addresses,
-			DNS:       existingConfig.Interface.DNS,
-			DNSSearch: existingConfig.Interface.DNSSearch,
-			MTU:       existingConfig.Interface.MTU,
-			PreUp:     existingConfig.Interface.PreUp,
-			PostUp:    existingConfig.Interface.PostUp,
-			PreDown:   existingConfig.Interface.PreDown,
-			PostDown:  existingConfig.Interface.PostDown,
-			TableOff:  existingConfig.Interface.TableOff,
+			Addresses:    existingConfig.Interface.Addresses,
+			DNS:          existingConfig.Interface.DNS,
+			DNSOverHTTPS: existingConfig.Interface.DNSOverHTTPS,
+			DNSSearch:    existingConfig.Interface.DNSSearch,
+			MTU:          existingConfig.Interface.MTU,
+			PreUp:        existingConfig.Interface.PreUp,
+			PostUp:       existingConfig.Interface.PostUp,
+			PreDown:      existingConfig.Interface.PreDown,
+			PostDown:     existingConfig.Interface.PostDown,
+			TableOff:     existingConfig.Interface.TableOff,
 		},
 	}
 	if interfaze.Flags&driver.InterfaceHasPrivateKey != 0 {

@@ -51,11 +51,12 @@ func (conf *Config) ToWgQuick() string {
 		writeField(conf.Interface.Comments, "Address", true, strings.Join(addrStrings, ", "))
 	}
 
-	if len(conf.Interface.DNS)+len(conf.Interface.DNSSearch) > 0 {
-		addrStrings := make([]string, 0, len(conf.Interface.DNS)+len(conf.Interface.DNSSearch))
+	if len(conf.Interface.DNS)+len(conf.Interface.DNSOverHTTPS)+len(conf.Interface.DNSSearch) > 0 {
+		addrStrings := make([]string, 0, len(conf.Interface.DNS)+len(conf.Interface.DNSOverHTTPS)+len(conf.Interface.DNSSearch))
 		for _, address := range conf.Interface.DNS {
 			addrStrings = append(addrStrings, address.String())
 		}
+		addrStrings = append(addrStrings, conf.Interface.DNSOverHTTPS...)
 		addrStrings = append(addrStrings, conf.Interface.DNSSearch...)
 		writeField(conf.Interface.Comments, "DNS", true, strings.Join(addrStrings, ", "))
 	}

@@ -14,10 +14,10 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 
 ## Phase 1 — DNS Configuration
 
-- [ ] Preserve normal `DNS = <IP>` behavior.
-- [ ] Recognize `DNS = https://...` as a DNS-over-HTTPS endpoint.
-- [ ] Preserve encrypted DNS endpoint paths and identifiers exactly.
-- [ ] Add parsing tests for plain DNS and encrypted DNS configurations.
+- [x] Preserve normal `DNS = <IP>` behavior.
+- [x] Recognize `DNS = https://...` as a DNS-over-HTTPS endpoint.
+- [x] Preserve encrypted DNS endpoint paths and identifiers exactly.
+- [x] Add parsing tests for plain DNS and encrypted DNS configurations.
 
 **Exit criteria:** TunnelMint can safely distinguish normal DNS from DoH without breaking standard configurations.
 
