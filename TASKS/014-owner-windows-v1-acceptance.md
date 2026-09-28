@@ -2,7 +2,13 @@
 
 ## Purpose
 
-This is the real-machine acceptance checklist to run after Task 016 final pre-acceptance cleanup is merged/reviewed. These checks require an elevated disposable Windows VM, real tunnel configuration/peer access, and owner observation. Coding agents must not mark a check passed based only on unit tests, mocks, static review, or build success.
+This is the real-machine acceptance checklist to run after Task 016 final pre-acceptance cleanup is merged/reviewed. These checks are to be performed on the **current assigned Windows build/test VM**. Do not request or require a second Windows VM. The existing machine is the disposable acceptance environment.
+
+The current VM must be used for elevated install/service/network tests, real tunnel configuration/peer access, packet capture where available, and UI/lifecycle checks. Coding agents must not mark a check passed based only on unit tests, mocks, static review, or build success.
+
+If the current agent process itself is non-elevated, use normal Windows elevation on this same VM (or have the agent session relaunched from an Administrator terminal if Windows cannot elevate the existing process). **Lack of elevation is not a reason to request another VM.** Install/start `TunnelMintManager` and the tested build on this machine as part of acceptance.
+
+Where a truly clean-machine state is useful, use cleanup/uninstall/reinstall or an existing snapshot capability on this same VM if available. Do not block Task 014 waiting for an additional machine.
 
 Record exact build/commit tested and evidence/results in `docs/task-014-owner-acceptance.md` when performed.
 
@@ -30,7 +36,7 @@ Mandatory handling rules:
 
 ## Install / product isolation
 
-- [ ] Install the amd64 MSI elevated on a clean Windows 11 VM.
+- [ ] Install the amd64 MSI elevated on the current assigned Windows build/test VM.
 - [ ] Confirm TunnelMint launches normally after install.
 - [ ] Confirm `TunnelMintManager` installs/runs and no upstream manager/service is reused.
 - [ ] Confirm TunnelMint data/config paths are under TunnelMint-owned locations.
