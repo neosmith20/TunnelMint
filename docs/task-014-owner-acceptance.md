@@ -129,4 +129,25 @@ Administrator PowerShell window on this same VM. It performs only the blocked
 uninstall/install/startup/service checks and writes sanitized local results;
 it does not read or print the owner tunnel configuration.
 
+## Elevated current-main installation and startup result
+
+The owner ran the prepared elevated script on this VM on 2026-09-28. Its
+sanitized result file records that it ran elevated, removed one old
+`TunnelMint Development` product successfully (MSI exit 0), and installed the
+current-main amd64 MSI successfully (MSI exit 0). The script then ran the
+installed `C:\Program Files\TunnelMint\tunnelmint.exe /update` successfully
+(exit 0), with no FIPS or package-initialization panic.
+
+The script also observed `TunnelMintManager` installed with Automatic startup
+and Running state, and a separately running TunnelMint UI window titled
+`TunnelMint (unsigned build, no updates)`. This completes the fixed-MSI
+installation, manager-service, update-smoke, and normal-startup checks on the
+real acceptance VM. The installed product files and the existing official
+WireGuard installation remain present as previously recorded.
+
+The owner configuration remains unread, unmodified, and absent from this
+repository. Live import, connection, traffic, DNS, DoH, leak, lifecycle,
+IPv6, and upgrade acceptance checks remain unexecuted and are not marked
+passed.
+
 No beta-readiness or production-readiness claim is made.
