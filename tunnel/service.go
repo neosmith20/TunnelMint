@@ -195,7 +195,7 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 		return
 	}
 
-	err = enableFirewall(config, luid)
+	err = enableFirewall(config, luid, encryptedDNSConfigured(config))
 	if err != nil {
 		serviceError = services.ErrorFirewall
 		return

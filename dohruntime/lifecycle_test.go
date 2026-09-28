@@ -158,3 +158,28 @@ func TestRefreshReplacesOwnedRoutesAndProxy(t *testing.T) {
 	}
 	_ = s.Close()
 }
+
+func TestFinalizeFailureRollsBackDNSProxyAndRoutes(t *testing.T) {
+	var restored, closed, deleted bool
+	hooks := Hooks{
+		Bootstrap: func(context.Context, string) ([]netip.Addr, error) {
+			return []netip.Addr{netip.MustParseAddr("192.0.2.10")}, nil
+		},
+		AddRoute: func(netip.Prefix) (bool, error) { return true, nil },
+		DelRoute: func(netip.Prefix) error { deleted = true; return nil },
+		Verify:   func(context.Context, string, []netip.Addr) error { return nil },
+		StartProxy: func(context.Context, string, []netip.Addr) (io.Closer, error) {
+			return closeFunc(func() error { closed = true; return nil }), nil
+		},
+		SetDNS: func() (func() error, error) {
+			return func() error { restored = true; return nil }, nil
+		},
+		Finalize: func() error { return errors.New("firewall update failed") },
+	}
+	if _, err := Activate(context.Background(), Config{Endpoint: "https://dns.example/dns-query"}, hooks); err == nil {
+		t.Fatal("finalize failure unexpectedly succeeded")
+	}
+	if !restored || !closed || !deleted {
+		t.Fatalf("rollback state restored=%v closed=%v deleted=%v", restored, closed, deleted)
+	}
+}

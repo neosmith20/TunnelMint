@@ -41,6 +41,7 @@ type Hooks struct {
 	Verify     func(context.Context, string, []netip.Addr) error
 	StartProxy func(context.Context, string, []netip.Addr) (io.Closer, error)
 	SetDNS     func() (restore func() error, err error)
+	Finalize   func() error
 }
 
 type Session struct {
@@ -106,6 +107,11 @@ func Activate(ctx context.Context, config Config, hooks Hooks) (*Session, error)
 		return rollback(fmt.Errorf("configure Windows DNS: %w", err))
 	}
 	s.stage = StageDNSConfigured
+	if hooks.Finalize != nil {
+		if err := hooks.Finalize(); err != nil {
+			return rollback(fmt.Errorf("finalize encrypted DNS protection: %w", err))
+		}
+	}
 	s.stage = StageReady
 	return s, nil
 }

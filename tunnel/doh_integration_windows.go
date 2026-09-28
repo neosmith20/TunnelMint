@@ -22,6 +22,7 @@ import (
 	"golang.zx2c4.com/wireguard/windows/dnsproxy"
 	"golang.zx2c4.com/wireguard/windows/doh"
 	"golang.zx2c4.com/wireguard/windows/dohruntime"
+	"golang.zx2c4.com/wireguard/windows/tunnel/firewall"
 	"golang.zx2c4.com/wireguard/windows/tunnel/winipcfg"
 )
 
@@ -119,6 +120,10 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 				}
 				return luid.SetDNS(windows.AF_INET, v4, config.Interface.DNSSearch)
 			}, nil
+		},
+		Finalize: func() error {
+			exceptions := []netip.Addr{netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1")}
+			return firewall.ReconfigureDNS(uint64(luid), shouldNotRestrictFirewall(config), exceptions)
 		},
 	}
 	return dohruntime.Activate(ctx, dohruntime.Config{Endpoint: endpoint, PeerEndpointAddress: peerEndpoints}, hooks)

@@ -121,13 +121,6 @@ func EnableFirewall(luid uint64, doNotRestrict bool, restrictToDNSServers []neti
 		}
 
 		if !doNotRestrict {
-			if len(restrictToDNSServers) > 0 {
-				err = blockDNS(restrictToDNSServers, session, baseObjects, 15, 14)
-				if err != nil {
-					return wrapErr(err)
-				}
-			}
-
 			err = permitLoopback(session, baseObjects, 13)
 			if err != nil {
 				return wrapErr(err)
@@ -166,6 +159,12 @@ func EnableFirewall(luid uint64, doNotRestrict bool, restrictToDNSServers []neti
 				return wrapErr(err)
 			}
 		}
+		if len(restrictToDNSServers) > 0 {
+			err = blockDNS(restrictToDNSServers, session, baseObjects, 15, 14)
+			if err != nil {
+				return wrapErr(err)
+			}
+		}
 
 		return nil
 	}
@@ -177,6 +176,21 @@ func EnableFirewall(luid uint64, doNotRestrict bool, restrictToDNSServers []neti
 	}
 
 	wfpSession = session
+	return nil
+}
+
+// ReconfigureDNS replaces TunnelMint's dynamic WFP session so a temporary
+// bootstrap resolver exception can be removed after DoH verification.
+func ReconfigureDNS(luid uint64, doNotRestrict bool, exceptions []netip.Addr) error {
+	DisableFirewall()
+	if err := EnableFirewall(luid, doNotRestrict, exceptions); err != nil {
+		// Keep DNS blocked if the replacement session cannot be installed. The
+		// caller will tear this session down as part of activation rollback.
+		if fallbackErr := EnableFirewall(luid, true, exceptions); fallbackErr != nil {
+			return errors.Join(err, fallbackErr)
+		}
+		return err
+	}
 	return nil
 }
 
