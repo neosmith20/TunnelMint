@@ -17,6 +17,7 @@ import (
 	"golang.org/x/sys/windows/svc/mgr"
 
 	"golang.zx2c4.com/wireguard/windows/conf"
+	"golang.zx2c4.com/wireguard/windows/product"
 )
 
 var cachedServiceManager *mgr.Mgr
@@ -47,7 +48,7 @@ func InstallManager() error {
 
 	// TODO: Do we want to bail if executable isn't being run from the right location?
 
-	serviceName := "WireGuardManager"
+	serviceName := product.ManagerServiceName
 	service, err := m.OpenService(serviceName)
 	if err == nil {
 		status, err := service.Query()
@@ -87,7 +88,7 @@ func InstallManager() error {
 		ServiceType:  windows.SERVICE_WIN32_OWN_PROCESS,
 		StartType:    mgr.StartAutomatic,
 		ErrorControl: mgr.ErrorNormal,
-		DisplayName:  "WireGuard Manager",
+		DisplayName:  product.ManagerServiceDisplayName,
 	}
 
 	service, err = m.CreateService(serviceName, path, config, "/managerservice")
@@ -103,7 +104,7 @@ func UninstallManager() error {
 	if err != nil {
 		return err
 	}
-	serviceName := "WireGuardManager"
+	serviceName := product.ManagerServiceName
 	service, err := m.OpenService(serviceName)
 	if err != nil {
 		return err
@@ -169,7 +170,7 @@ func InstallTunnel(configPath string) error {
 		StartType:    mgr.StartAutomatic,
 		ErrorControl: mgr.ErrorNormal,
 		Dependencies: []string{"Nsi", "TcpIp"},
-		DisplayName:  "WireGuard Tunnel: " + name,
+		DisplayName:  product.TunnelServiceDisplayPrefix + name,
 		SidType:      windows.SERVICE_SID_TYPE_UNRESTRICTED,
 	}
 	service, err = m.CreateService(serviceName, path, config, "/tunnelservice", configPath)

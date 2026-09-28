@@ -24,10 +24,10 @@ import (
 	"golang.zx2c4.com/wireguard/windows/elevate"
 	"golang.zx2c4.com/wireguard/windows/l18n"
 	"golang.zx2c4.com/wireguard/windows/manager"
+	"golang.zx2c4.com/wireguard/windows/product"
 	"golang.zx2c4.com/wireguard/windows/ringlogger"
 	"golang.zx2c4.com/wireguard/windows/tunnel"
 	"golang.zx2c4.com/wireguard/windows/ui"
-	"golang.zx2c4.com/wireguard/windows/updater"
 )
 
 func setLogFile() {
@@ -115,7 +115,7 @@ func checkForWow64() {
 		fatalf("Unable to determine whether the process is running under WOW64: %v", err)
 	}
 	if b {
-		fatalf("You must use the native version of WireGuard on this computer.")
+		fatalf("You must use the native version of %s on this computer.", product.Name)
 	}
 }
 
@@ -128,14 +128,14 @@ func checkForAdminGroup() {
 	}
 	defer processToken.Close()
 	if !elevate.TokenIsElevatedOrElevatable(processToken) {
-		fatalf("WireGuard may only be used by users who are a member of the Builtin %s group.", elevate.AdminGroupName())
+		fatalf("%s may only be used by users who are a member of the Builtin %s group.", product.Name, elevate.AdminGroupName())
 	}
 }
 
 func checkForAdminDesktop() {
 	adminDesktop, err := elevate.IsAdminDesktop()
 	if !adminDesktop && err == nil {
-		fatalf("WireGuard is running, but the UI is only accessible from desktops of the Builtin %s group.", elevate.AdminGroupName())
+		fatalf("%s is running, but the UI is only accessible from desktops of the Builtin %s group.", product.Name, elevate.AdminGroupName())
 	}
 }
 
@@ -194,7 +194,7 @@ func main() {
 		}
 		checkForAdminDesktop()
 		time.Sleep(30 * time.Second)
-		fatalf("WireGuard system tray icon did not appear after 30 seconds.")
+		fatalf("%s system tray icon did not appear after 30 seconds.", product.Name)
 		return
 	case "/uninstallmanagerservice":
 		if len(os.Args) != 2 {
@@ -304,25 +304,7 @@ func main() {
 		if len(os.Args) != 2 {
 			usage()
 		}
-		for progress := range updater.DownloadVerifyAndExecute(0) {
-			if len(progress.Activity) > 0 {
-				if progress.BytesTotal > 0 || progress.BytesDownloaded > 0 {
-					var percent float64
-					if progress.BytesTotal > 0 {
-						percent = float64(progress.BytesDownloaded) / float64(progress.BytesTotal) * 100.0
-					}
-					log.Printf("%s: %d/%d (%.2f%%)\n", progress.Activity, progress.BytesDownloaded, progress.BytesTotal, percent)
-				} else {
-					log.Println(progress.Activity)
-				}
-			}
-			if progress.Error != nil {
-				log.Printf("Error: %v\n", progress.Error)
-			}
-			if progress.Complete || progress.Error != nil {
-				return
-			}
-		}
+		log.Println("TunnelMint updates are disabled until signed release infrastructure is available")
 		return
 	case "/removedriver":
 		if len(os.Args) != 2 {

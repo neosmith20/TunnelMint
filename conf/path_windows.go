@@ -13,6 +13,8 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+
+	"golang.zx2c4.com/wireguard/windows/product"
 )
 
 var (
@@ -52,7 +54,7 @@ func RootDirectory(create bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	root = filepath.Join(root, "WireGuard")
+	root = filepath.Join(root, product.DataDirectoryName)
 	if !create {
 		return filepath.Join(root, "Data"), nil
 	}

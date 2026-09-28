@@ -30,8 +30,8 @@ const IMAGE_LOAD_CONFIG_DIRECTORY _load_config_used = {
 	.GuardFlags = IMAGE_GUARD_SECURITY_COOKIE_UNUSED
 };
 
-#define MANAGER_SERVICE_NAME TEXT("WireGuardManager")
-#define TUNNEL_SERVICE_PREFIX TEXT("WireGuardTunnel$")
+#define MANAGER_SERVICE_NAME TEXT("TunnelMintManager")
+#define TUNNEL_SERVICE_PREFIX TEXT("TunnelMintTunnel$")
 
 enum log_level { LOG_LEVEL_INFO, LOG_LEVEL_WARN, LOG_LEVEL_ERR, LOG_LEVEL_MSIERR };
 
@@ -54,15 +54,15 @@ static void log_messagef(MSIHANDLE installer, enum log_level level, const TCHAR 
 
 	switch (level) {
 	case LOG_LEVEL_INFO:
-		template = TEXT("WireGuard: [1]");
+		template = TEXT("TunnelMint: [1]");
 		type = INSTALLMESSAGE_INFO;
 		break;
 	case LOG_LEVEL_WARN:
-		template = TEXT("WireGuard warning: [1]");
+		template = TEXT("TunnelMint warning: [1]");
 		type = INSTALLMESSAGE_INFO;
 		break;
 	case LOG_LEVEL_ERR:
-		template = TEXT("WireGuard error: [1]");
+		template = TEXT("TunnelMint error: [1]");
 		type = INSTALLMESSAGE_ERROR;
 		break;
 	case LOG_LEVEL_MSIERR:
@@ -110,7 +110,7 @@ __declspec(dllexport) UINT __stdcall CheckWinVer(MSIHANDLE installer)
 		return ERROR_SUCCESS;
 	is_com_initialized = SUCCEEDED(CoInitialize(NULL));
 	ShellExecute(NULL, TEXT("open"), TEXT("https://lists.zx2c4.com/pipermail/wireguard/2026-March/009541.html"), NULL, NULL, SW_SHOWNORMAL);
-	log_messagef(installer, LOG_LEVEL_MSIERR, TEXT("WireGuard requires Windows ≥10."));
+	log_messagef(installer, LOG_LEVEL_MSIERR, TEXT("TunnelMint requires Windows ≥10."));
 	if (is_com_initialized)
 		CoUninitialize();
 	return ERROR_INSTALL_FAILURE;
@@ -157,7 +157,7 @@ __declspec(dllexport) UINT __stdcall CheckWow64(MSIHANDLE installer)
 		if (!is_wow64_process)
 			goto out;
 	}
-	log_messagef(installer, LOG_LEVEL_MSIERR, TEXT("You must use the native version of WireGuard on this computer."));
+	log_messagef(installer, LOG_LEVEL_MSIERR, TEXT("You must use the native version of TunnelMint on this computer."));
 	ret = ERROR_INSTALL_FAILURE;
 out:
 	if (is_com_initialized)
@@ -577,7 +577,7 @@ __declspec(dllexport) UINT __stdcall RemoveConfigFolder(MSIHANDLE installer)
 	if (!path[0] || !PathAppend(path, TEXT("Data")))
 		goto out;
 	remove_directory_recursive(installer, path, 10);
-	RegDeleteKey(HKEY_LOCAL_MACHINE, TEXT("Software\\WireGuard")); // Assumes no WOW.
+	RegDeleteKey(HKEY_LOCAL_MACHINE, TEXT("Software\\TunnelMint")); // Assumes no WOW.
 out:
 	if (is_com_initialized)
 		CoUninitialize();

@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.zx2c4.com/wireguard/windows/product"
 )
 
 var reservedNames = []string{
@@ -113,5 +115,5 @@ func ServiceNameOfTunnel(tunnelName string) (string, error) {
 	if !TunnelNameIsValid(tunnelName) {
 		return "", errors.New("Tunnel name is not valid")
 	}
-	return "WireGuardTunnel$" + tunnelName, nil
+	return product.TunnelServicePrefix + tunnelName, nil
 }

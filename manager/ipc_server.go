@@ -8,6 +8,7 @@ package manager
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -260,19 +261,7 @@ func (s *ManagerService) UpdateState() UpdateState {
 }
 
 func (s *ManagerService) Update() {
-	if s.elevatedToken == 0 {
-		return
-	}
-	progress := updater.DownloadVerifyAndExecute(uintptr(s.elevatedToken))
-	go func() {
-		for {
-			dp := <-progress
-			IPCServerNotifyUpdateProgress(dp)
-			if dp.Complete || dp.Error != nil {
-				return
-			}
-		}
-	}()
+	IPCServerNotifyUpdateProgress(updater.DownloadProgress{Error: errors.New("TunnelMint updates are disabled until signed release infrastructure is available")})
 }
 
 func (s *ManagerService) ServeConn(reader io.Reader, writer io.Writer) {

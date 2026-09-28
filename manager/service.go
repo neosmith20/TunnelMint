@@ -19,6 +19,7 @@ import (
 
 	"golang.zx2c4.com/wireguard/windows/conf"
 	"golang.zx2c4.com/wireguard/windows/elevate"
+	"golang.zx2c4.com/wireguard/windows/product"
 	"golang.zx2c4.com/wireguard/windows/ringlogger"
 	"golang.zx2c4.com/wireguard/windows/services"
 )
@@ -357,5 +358,5 @@ loop:
 }
 
 func Run() error {
-	return svc.Run("WireGuardManager", &managerService{})
+	return svc.Run(product.ManagerServiceName, &managerService{})
 }

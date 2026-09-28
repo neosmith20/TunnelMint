@@ -8,7 +8,7 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 - [x] Build the untouched Windows baseline successfully.
 - [ ] Confirm tunnel import, connect, disconnect, handshake, and traffic behavior.
 - [x] Document a reproducible build procedure.
-- [ ] Establish TunnelMint development branding so test builds are clearly identifiable.
+- [x] Establish TunnelMint development branding so test builds are clearly identifiable.
 
 **Exit criteria:** A reproducible TunnelMint development build behaves correctly before any new networking behavior is introduced.
 
