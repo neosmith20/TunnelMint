@@ -23,6 +23,7 @@ import (
 	"golang.zx2c4.com/wireguard/windows/dnsproxy"
 	"golang.zx2c4.com/wireguard/windows/doh"
 	"golang.zx2c4.com/wireguard/windows/dohruntime"
+	"golang.zx2c4.com/wireguard/windows/driver"
 	"golang.zx2c4.com/wireguard/windows/tunnel/firewall"
 	"golang.zx2c4.com/wireguard/windows/tunnel/winipcfg"
 )
@@ -33,7 +34,7 @@ func encryptedDNSConfigured(config *conf.Config) bool {
 	return config != nil && len(config.Interface.DNSOverHTTPS) > 0
 }
 
-func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcfg.LUID) (*dohruntime.Session, error) {
+func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcfg.LUID, adapter *driver.Adapter, configuredResolvers []netip.Addr) (*dohruntime.Session, error) {
 	if !encryptedDNSConfigured(config) {
 		return nil, nil
 	}
@@ -41,11 +42,10 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 		return nil, errors.New("exactly one encrypted DNS endpoint is supported per tunnel")
 	}
 	endpoint := config.Interface.DNSOverHTTPS[0]
-	bootstrapResolvers, err := configuredBootstrapResolvers()
-	if err != nil {
-		return nil, err
+	if len(configuredResolvers) == 0 {
+		return nil, errors.New("at least one bootstrap resolver is required")
 	}
-	resolver := bootstrap.NewResolver(bootstrapResolvers)
+	resolver := bootstrap.NewResolver(configuredResolvers)
 	resolver.Timeout = dohRuntimeTimeout
 	peerEndpoints := make([]netip.Addr, 0, len(config.Peers))
 	for _, peer := range config.Peers {
@@ -53,25 +53,35 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 			peerEndpoints = append(peerEndpoints, address)
 		}
 	}
+	peerRoutes := newDoHPeerRouteManager(adapter, config)
+	ownedWindowsRoutes := make(map[netip.Prefix]bool)
 	var client *doh.Client
 	hooks := dohruntime.Hooks{
 		Bootstrap: func(ctx context.Context, endpoint string) ([]netip.Addr, error) {
 			return resolver.ResolveEndpoint(ctx, endpoint)
 		},
 		AddRoute: func(prefix netip.Prefix) (bool, error) {
+			peerOwned, err := peerRoutes.Add(prefix)
+			if err != nil {
+				return false, err
+			}
 			nextHop := netip.IPv4Unspecified()
 			if prefix.Addr().Is6() {
 				nextHop = netip.IPv6Unspecified()
 			}
 			if _, err := luid.Route(prefix, nextHop); err == nil {
-				return false, nil
+				ownedWindowsRoutes[prefix] = false
+				return peerOwned, nil
 			}
 			if err := luid.AddRoute(prefix, nextHop, 0); err != nil {
+				_ = peerRoutes.Delete(prefix)
 				if err == windows.ERROR_OBJECT_ALREADY_EXISTS {
-					return false, nil
+					ownedWindowsRoutes[prefix] = false
+					return peerOwned, nil
 				}
 				return false, err
 			}
+			ownedWindowsRoutes[prefix] = true
 			return true, nil
 		},
 		DelRoute: func(prefix netip.Prefix) error {
@@ -79,11 +89,17 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 			if prefix.Addr().Is6() {
 				nextHop = netip.IPv6Unspecified()
 			}
-			err := luid.DeleteRoute(prefix, nextHop)
-			if err == windows.ERROR_NOT_FOUND {
-				return nil
+			var firstErr error
+			if ownedWindowsRoutes[prefix] {
+				if err := luid.DeleteRoute(prefix, nextHop); err != nil && err != windows.ERROR_NOT_FOUND {
+					firstErr = err
+				}
 			}
-			return err
+			delete(ownedWindowsRoutes, prefix)
+			if err := peerRoutes.Delete(prefix); err != nil && firstErr == nil {
+				firstErr = err
+			}
+			return firstErr
 		},
 		Verify: func(ctx context.Context, endpoint string, addresses []netip.Addr) error {
 			httpClient := doh.NewHTTPClientForAddresses(addresses, http.DefaultClient)
@@ -107,6 +123,16 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 				return nil, err
 			}
 			return proxy, nil
+		},
+		ReplaceProxy: func(_ context.Context, _ string, _ []netip.Addr, existing io.Closer) error {
+			if client == nil {
+				return errors.New("DoH transport was not verified")
+			}
+			proxy, ok := existing.(*dnsproxy.Proxy)
+			if !ok {
+				return errors.New("existing DNS proxy does not support transport replacement")
+			}
+			return proxy.SetClient(client)
 		},
 		SetDNS: func() (func() error, error) {
 			previous, err := luid.DNS()

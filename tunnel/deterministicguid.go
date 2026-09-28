@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	deterministicGUIDLabel = "Deterministic WireGuard Windows GUID v1 jason@zx2c4.com"
-	fixedGUIDLabel         = "Fixed WireGuard Windows GUID v1 jason@zx2c4.com"
+	deterministicGUIDLabel         = "Deterministic TunnelMint Windows GUID v1"
+	fixedGUIDLabel                 = "Fixed TunnelMint Windows GUID v1"
+	upstreamDeterministicGUIDLabel = "Deterministic WireGuard Windows GUID v1 jason@zx2c4.com"
 )
 
 // Escape hatch for external consumers, not us.
@@ -46,9 +47,13 @@ var UseFixedGUIDInsteadOfDeterministic = false
  */
 
 func deterministicGUID(c *conf.Config) *windows.GUID {
+	return deterministicGUIDWithLabel(c, deterministicGUIDLabel)
+}
+
+func deterministicGUIDWithLabel(c *conf.Config, label string) *windows.GUID {
 	b2, _ := blake2s.New256(nil)
 	if !UseFixedGUIDInsteadOfDeterministic {
-		b2.Write([]byte(deterministicGUIDLabel))
+		b2.Write([]byte(label))
 	} else {
 		b2.Write([]byte(fixedGUIDLabel))
 	}

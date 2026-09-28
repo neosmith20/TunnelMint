@@ -1,0 +1,38 @@
+name: Windows validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  focused-tests-and-build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache: true
+
+      - name: Run focused TunnelMint tests
+        shell: pwsh
+        run: |
+          go test -vet=off ./bootstrap ./dnsproxy ./doh ./dohruntime ./product
+          go test -vet=off ./conf -run 'Test(DNSParsing|DNSRoundTripPreservesDoH|DNSURLValidation|FromWgQuick)$'
+
+      - name: Build Windows client
+        shell: cmd
+        run: cmd /c build.bat
+
+      # Installer linking depends on the Windows Installer ICE service and is
+      # kept as a separate release-build step until GitHub-hosted runners offer
+      # a deterministic ICE environment.

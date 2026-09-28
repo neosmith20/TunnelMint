@@ -103,10 +103,18 @@ func EnableFirewall(luid uint64, doNotRestrict bool, restrictToDNSServers []neti
 	if wfpSession != 0 {
 		return errors.New("The firewall has already been enabled")
 	}
+	session, err := installFirewall(luid, doNotRestrict, restrictToDNSServers)
+	if err != nil {
+		return err
+	}
+	wfpSession = session
+	return nil
+}
 
+func installFirewall(luid uint64, doNotRestrict bool, restrictToDNSServers []netip.Addr) (uintptr, error) {
 	session, err := createWfpSession()
 	if err != nil {
-		return wrapErr(err)
+		return 0, wrapErr(err)
 	}
 
 	objectInstaller := func(session uintptr) error {
@@ -172,26 +180,38 @@ func EnableFirewall(luid uint64, doNotRestrict bool, restrictToDNSServers []neti
 	err = runTransaction(session, objectInstaller)
 	if err != nil {
 		fwpmEngineClose0(session)
-		return wrapErr(err)
+		return 0, wrapErr(err)
 	}
-
-	wfpSession = session
-	return nil
+	return session, nil
 }
 
 // ReconfigureDNS replaces TunnelMint's dynamic WFP session so a temporary
 // bootstrap resolver exception can be removed after DoH verification.
 func ReconfigureDNS(luid uint64, doNotRestrict bool, exceptions []netip.Addr) error {
-	DisableFirewall()
-	if err := EnableFirewall(luid, doNotRestrict, exceptions); err != nil {
-		// Keep DNS blocked if the replacement session cannot be installed. The
-		// caller will tear this session down as part of activation rollback.
-		if fallbackErr := EnableFirewall(luid, true, exceptions); fallbackErr != nil {
-			return errors.Join(err, fallbackErr)
-		}
+	newSession, err := replaceSession(wfpSession, func() (uintptr, error) {
+		return installFirewall(luid, doNotRestrict, exceptions)
+	}, func(session uintptr) { _ = fwpmEngineClose0(session) })
+	if err != nil {
+		// The existing dynamic session remains active, so a failed replacement
+		// cannot reopen ordinary plaintext DNS.
 		return err
 	}
+	wfpSession = newSession
 	return nil
+}
+
+// replaceSession is the transaction ordering used by ReconfigureDNS. It is
+// kept generic so failure-injection tests can prove make-before-break without
+// opening a Windows Filtering Platform session.
+func replaceSession(old uintptr, install func() (uintptr, error), close func(uintptr)) (uintptr, error) {
+	newSession, err := install()
+	if err != nil {
+		return old, err
+	}
+	if old != 0 {
+		close(old)
+	}
+	return newSession, nil
 }
 
 func DisableFirewall() {

@@ -108,6 +108,64 @@ func TestUDPQuerySuccess(t *testing.T) {
 	}
 }
 
+func TestSetClientKeepsLoopbackListenersAndSwapsTransport(t *testing.T) {
+	first, closeFirst := testDoHClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		body[0] = 0x11
+		body[2] |= 0x80
+		w.Header().Set("Content-Type", "application/dns-message")
+		_, _ = w.Write(body)
+	}))
+	defer closeFirst()
+	second, closeSecond := testDoHClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		body[0] = 0x22
+		body[2] |= 0x80
+		w.Header().Set("Content-Type", "application/dns-message")
+		_, _ = w.Write(body)
+	}))
+	defer closeSecond()
+	proxy, err := New(Options{Address: "127.0.0.1:0", Client: first})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := proxy.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer proxy.Stop()
+	address := proxy.Status().UDPAddress
+	query := testQuery(1)
+	queryResponse := func() []byte {
+		conn, err := net.Dial("udp", address)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer conn.Close()
+		_ = conn.SetReadDeadline(time.Now().Add(time.Second))
+		if _, err := conn.Write(query); err != nil {
+			t.Fatal(err)
+		}
+		response := make([]byte, 65536)
+		n, err := conn.Read(response)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return response[:n]
+	}
+	if got := queryResponse()[0]; got != 0x11 {
+		t.Fatalf("first transport response ID = %#x", got)
+	}
+	if err := proxy.SetClient(second); err != nil {
+		t.Fatal(err)
+	}
+	if got := queryResponse()[0]; got != 0x22 {
+		t.Fatalf("swapped transport response ID = %#x", got)
+	}
+	if proxy.Status().UDPAddress != address {
+		t.Fatalf("UDP listener changed from %s to %s", address, proxy.Status().UDPAddress)
+	}
+}
+
 func TestTCPQuerySuccessAndFraming(t *testing.T) {
 	var calls atomic.Int32
 	p, cleanup := newTestProxy(t, echoHandler(t, &calls), Options{})

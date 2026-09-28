@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"golang.org/x/sys/windows"
-	"golang.zx2c4.com/wireguard/windows/bootstrap"
 	"golang.zx2c4.com/wireguard/windows/conf"
 	"golang.zx2c4.com/wireguard/windows/services"
 	"golang.zx2c4.com/wireguard/windows/tunnel/firewall"
@@ -176,16 +175,21 @@ func shouldNotRestrictFirewall(conf *conf.Config) bool {
 	return doNotRestrict
 }
 
-func enableFirewall(conf *conf.Config, luid winipcfg.LUID, encryptedDNS bool) error {
+func enableFirewall(conf *conf.Config, luid winipcfg.LUID, encryptedDNS bool, bootstrapResolvers []netip.Addr) error {
 	doNotRestrict := shouldNotRestrictFirewall(conf)
 	var dnsExceptions []netip.Addr
 	if !doNotRestrict || encryptedDNS {
 		dnsExceptions = append(dnsExceptions, conf.Interface.DNS...)
 	}
 	if encryptedDNS {
-		dnsExceptions = append(dnsExceptions, bootstrap.DefaultResolvers()...)
-		dnsExceptions = append(dnsExceptions, netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1"))
+		dnsExceptions = append(dnsExceptions, encryptedDNSBootstrapExceptions(bootstrapResolvers)...)
 	}
 	log.Println("Enabling firewall rules")
 	return firewall.EnableFirewall(uint64(luid), doNotRestrict, dnsExceptions)
+}
+
+func encryptedDNSBootstrapExceptions(resolvers []netip.Addr) []netip.Addr {
+	exceptions := append([]netip.Addr(nil), resolvers...)
+	exceptions = append(exceptions, netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("::1"))
+	return exceptions
 }

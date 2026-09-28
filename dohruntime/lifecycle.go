@@ -35,13 +35,14 @@ type Config struct {
 }
 
 type Hooks struct {
-	Bootstrap  func(context.Context, string) ([]netip.Addr, error)
-	AddRoute   func(netip.Prefix) (owned bool, err error)
-	DelRoute   func(netip.Prefix) error
-	Verify     func(context.Context, string, []netip.Addr) error
-	StartProxy func(context.Context, string, []netip.Addr) (io.Closer, error)
-	SetDNS     func() (restore func() error, err error)
-	Finalize   func() error
+	Bootstrap    func(context.Context, string) ([]netip.Addr, error)
+	AddRoute     func(netip.Prefix) (owned bool, err error)
+	DelRoute     func(netip.Prefix) error
+	Verify       func(context.Context, string, []netip.Addr) error
+	StartProxy   func(context.Context, string, []netip.Addr) (io.Closer, error)
+	ReplaceProxy func(context.Context, string, []netip.Addr, io.Closer) error
+	SetDNS       func() (restore func() error, err error)
+	Finalize     func() error
 }
 
 type Session struct {
@@ -145,6 +146,9 @@ func (s *Session) Refresh(ctx context.Context, candidates []netip.Addr) error {
 	}
 	hooks, endpoint, peers, oldRoutes, oldProxy := s.hooks, s.config.Endpoint, s.config.PeerEndpointAddress, append([]netip.Prefix(nil), s.routes...), s.proxy
 	s.mu.Unlock()
+	if hooks.ReplaceProxy == nil {
+		return fmt.Errorf("refresh encrypted DNS proxy is not supported without an atomic transport swap")
+	}
 	selected, err := selectRouteCandidates(candidates, peers)
 	if err != nil {
 		return err
@@ -182,26 +186,21 @@ func (s *Session) Refresh(ctx context.Context, candidates []netip.Addr) error {
 		}
 		return fmt.Errorf("verify refreshed DoH transport: %w", err)
 	}
-	newProxy, err := hooks.StartProxy(ctx, endpoint, selected)
-	if err != nil {
+	if err := hooks.ReplaceProxy(ctx, endpoint, selected, oldProxy); err != nil {
 		for _, route := range newRoutes {
 			if !containsPrefix(oldRoutes, route) {
 				_ = hooks.DelRoute(route)
 			}
 		}
-		return fmt.Errorf("start refreshed local DNS proxy: %w", err)
+		return fmt.Errorf("refresh local DNS proxy: %w", err)
 	}
 	for route := range oldSet {
 		if err := hooks.DelRoute(route); err != nil {
-			_ = newProxy.Close()
 			return fmt.Errorf("remove stale DoH host route %s: %w", route, err)
 		}
 	}
-	if oldProxy != nil {
-		_ = oldProxy.Close()
-	}
 	s.mu.Lock()
-	s.routes, s.proxy = newRoutes, newProxy
+	s.routes = newRoutes
 	s.mu.Unlock()
 	return nil
 }

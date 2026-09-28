@@ -60,6 +60,7 @@ type Status struct {
 
 type Proxy struct {
 	client          *doh.Client
+	clientMu        sync.RWMutex
 	address         string
 	queryTimeout    time.Duration
 	maxQuerySize    int
@@ -76,6 +77,19 @@ type Proxy struct {
 	mu     sync.Mutex
 	status Status
 	closed atomic.Bool
+}
+
+// SetClient atomically swaps the verified DoH transport used by an already
+// listening proxy. The loopback UDP/TCP sockets remain unchanged, so refresh
+// never attempts to bind a second proxy to port 53.
+func (p *Proxy) SetClient(client *doh.Client) error {
+	if client == nil {
+		return errors.New("DoH client is required")
+	}
+	p.clientMu.Lock()
+	p.client = client
+	p.clientMu.Unlock()
+	return nil
 }
 
 func New(options Options) (*Proxy, error) {
@@ -303,7 +317,13 @@ func (p *Proxy) forward(query []byte) ([]byte, error) {
 	}
 	ctx, cancel := context.WithTimeout(p.ctx, p.queryTimeout)
 	defer cancel()
-	response, err := p.client.Query(ctx, query)
+	p.clientMu.RLock()
+	client := p.client
+	p.clientMu.RUnlock()
+	if client == nil {
+		return nil, errors.New("DoH transport is unavailable")
+	}
+	response, err := client.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
