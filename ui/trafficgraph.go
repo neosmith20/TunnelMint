@@ -109,6 +109,9 @@ type trafficGraph struct {
 
 func newTrafficGraph(parent walk.Container, history *trafficHistory) (*trafficGraph, error) {
 	graph := &trafficGraph{history: history}
+	// The constructor is allowed to paint immediately, before the widget has
+	// been assigned, so initialise the text resource first.
+	graph.font, _ = walk.NewFont("Segoe UI", 8, 0)
 	widget, err := walk.NewCustomWidgetPixels(parent, 0, graph.paint)
 	if err != nil {
 		return nil, err
@@ -117,7 +120,6 @@ func newTrafficGraph(parent walk.Container, history *trafficHistory) (*trafficGr
 	graph.SetPaintMode(walk.PaintBuffered)
 	graph.SetInvalidatesOnResize(true)
 	graph.SetMinMaxSize(walk.Size{0, 164}, walk.Size{0, 164})
-	graph.font, _ = walk.NewFont("Segoe UI", 8, 0)
 	return graph, nil
 }
 

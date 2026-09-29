@@ -19,6 +19,10 @@ type darkButton struct {
 
 func newDarkButton(parent walk.Container, text string, primary bool) (*darkButton, error) {
 	button := &darkButton{text: text, primary: primary, enabled: true}
+	// Walk may request an initial paint while NewCustomWidgetPixels is still
+	// constructing the HWND.  Every paint dependency must therefore exist
+	// before creating the widget.
+	button.font, _ = walk.NewFont("Segoe UI Semibold", 10, 0)
 	widget, err := walk.NewCustomWidgetPixels(parent, 0, button.paint)
 	if err != nil {
 		return nil, err
@@ -27,7 +31,6 @@ func newDarkButton(parent walk.Container, text string, primary bool) (*darkButto
 	button.SetPaintMode(walk.PaintBuffered)
 	button.SetInvalidatesOnResize(true)
 	button.SetMinMaxSize(walk.Size{120, 36}, walk.Size{0, 36})
-	button.font, _ = walk.NewFont("Segoe UI Semibold", 10, 0)
 	button.MouseUp().Attach(func(_ int, _ int, mouse walk.MouseButton) {
 		if mouse == walk.LeftButton && button.Enabled() {
 			button.clicked.Publish()
