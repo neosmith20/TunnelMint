@@ -41,11 +41,10 @@ func (button *darkButton) SetText(text string)  { button.text = text; button.Inv
 func (button *darkButton) paint(canvas *walk.Canvas, bounds walk.Rectangle) error {
 	brush := uiCardBrush
 	color := uiTextColor
-	if button.primary && button.Enabled() {
+	// Paint can run during NewCustomWidgetPixels before the embedded widget is
+	// assigned, so presentation must not query its HWND-backed state here.
+	if button.primary {
 		brush, color = uiAccentBrush, walk.RGB(4, 20, 28)
-	}
-	if !button.Enabled() {
-		color = uiMutedColor
 	}
 	canvas.FillRectangle(brush, bounds)
 	return canvas.DrawTextPixels(button.text, button.font, color, bounds, walk.TextCenter|walk.TextVCenter|walk.TextSingleLine)

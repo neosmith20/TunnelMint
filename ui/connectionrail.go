@@ -148,7 +148,7 @@ func (rail *ConnectionRail) Load() {
 
 func (rail *ConnectionRail) paint(canvas *walk.Canvas, bounds walk.Rectangle) error {
 	canvas.FillRectangle(uiRailBrush, bounds)
-	rowHeight := rail.list.IntFrom96DPI(railRowHeight)
+	rowHeight := rail.IntFrom96DPI(railRowHeight)
 	selectedBrush := mustBrush(walk.RGB(11, 93, 126))
 	defer selectedBrush.Dispose()
 	for index, item := range rail.items {
