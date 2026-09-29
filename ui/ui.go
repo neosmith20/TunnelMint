@@ -17,7 +17,6 @@ import (
 
 	"golang.zx2c4.com/wireguard/windows/l18n"
 	"golang.zx2c4.com/wireguard/windows/manager"
-	"golang.zx2c4.com/wireguard/windows/version"
 )
 
 var (
@@ -53,11 +52,12 @@ func RunUI() {
 	for tray == nil {
 		tray, err = NewTray(mtw)
 		if err != nil {
-			if version.OsIsCore() {
-				noTrayAvailable = true
-				break
-			}
-			time.Sleep(time.Millisecond * 400)
+			// A missing or unavailable notification area must never prevent the
+			// main manager UI from starting. This is common in remote, kiosk, and
+			// shell-restart sessions, and the former retry loop kept the UI child
+			// alive forever before it ever entered its message loop.
+			noTrayAvailable = true
+			break
 		}
 	}
 
@@ -92,7 +92,7 @@ func RunUI() {
 	}()
 
 	if tray == nil {
-		win.ShowWindow(mtw.Handle(), win.SW_MINIMIZE)
+		win.ShowWindow(mtw.Handle(), win.SW_SHOW)
 	}
 
 	mtw.Run()
