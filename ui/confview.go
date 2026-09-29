@@ -61,32 +61,70 @@ func newDashboardCard(parent walk.Container, title string) (*walk.Composite, err
 	l := walk.NewVBoxLayout()
 	l.SetMargins(walk.Margins{16, 14, 16, 14})
 	l.SetSpacing(8)
-	card.SetLayout(l)
+	if err := card.SetLayout(l); err != nil {
+		card.Dispose()
+		return nil, fmt.Errorf("card layout: %w", err)
+	}
 	applyDarkSurface(card, uiCardBrush)
-	h, _ := walk.NewLabel(card)
+	h, err := walk.NewLabel(card)
+	if err != nil {
+		card.Dispose()
+		return nil, fmt.Errorf("card heading: %w", err)
+	}
 	h.SetText(title)
 	h.SetTextColor(uiTextColor)
-	f, _ := walk.NewFont("Segoe UI Semibold", 12, 0)
+	f, err := walk.NewFont("Segoe UI Semibold", 12, 0)
+	if err != nil {
+		card.Dispose()
+		return nil, fmt.Errorf("card heading font: %w", err)
+	}
 	h.SetFont(f)
 	return card, nil
 }
-func addDashboardRow(parent walk.Container, label, value string) *walk.Label {
-	row, _ := walk.NewComposite(parent)
+func newDashboardRow(parent walk.Container, label, value string) (*walk.Label, error) {
+	row, err := walk.NewComposite(parent)
+	if err != nil {
+		return nil, fmt.Errorf("row container: %w", err)
+	}
 	l := walk.NewHBoxLayout()
 	l.SetMargins(walk.Margins{})
-	row.SetLayout(l)
-	k, _ := walk.NewLabel(row)
+	if err := row.SetLayout(l); err != nil {
+		row.Dispose()
+		return nil, fmt.Errorf("row layout: %w", err)
+	}
+	k, err := walk.NewLabel(row)
+	if err != nil {
+		row.Dispose()
+		return nil, fmt.Errorf("row label: %w", err)
+	}
 	k.SetText(label)
 	applyMutedText(k)
 	walk.NewHSpacer(row)
-	v, _ := walk.NewLabel(row)
+	v, err := walk.NewLabel(row)
+	if err != nil {
+		row.Dispose()
+		return nil, fmt.Errorf("row value: %w", err)
+	}
 	v.SetText(value)
 	v.SetTextColor(uiTextColor)
+	return v, nil
+}
+
+func addDashboardRow(parent walk.Container, label, value string) *walk.Label {
+	v, err := newDashboardRow(parent, label, value)
+	if err != nil {
+		log.Printf("dashboard row %q: %v", label, err)
+	}
 	return v
 }
 
-func (v *ConfView) row(parent walk.Container, key, label, value string) {
-	v.rows[key] = addDashboardRow(parent, label, value)
+func (v *ConfView) row(parent walk.Container, key, label, value string) error {
+	valueLabel, err := newDashboardRow(parent, label, value)
+	if err != nil {
+		return fmt.Errorf("dashboard row %q: %w", key, err)
+	}
+	v.rows[key] = valueLabel
+	return nil
 }
 
 func NewConfView(parent walk.Container) (*ConfView, error) {
@@ -94,32 +132,55 @@ func NewConfView(parent walk.Container) (*ConfView, error) {
 	var err error
 	v.ScrollView, err = walk.NewScrollView(parent)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connection view: %w", err)
 	}
 	l := walk.NewVBoxLayout()
 	l.SetMargins(walk.Margins{18, 18, 18, 18})
 	l.SetSpacing(14)
-	v.SetLayout(l)
+	if err := v.SetLayout(l); err != nil {
+		return nil, fmt.Errorf("connection view layout: %w", err)
+	}
 	applyDarkSurface(v, uiCanvasBrush)
-	v.empty, _ = walk.NewComposite(v)
+	v.empty, err = walk.NewComposite(v)
+	if err != nil {
+		return nil, fmt.Errorf("empty state container: %w", err)
+	}
 	el := walk.NewVBoxLayout()
 	el.SetMargins(walk.Margins{80, 100, 80, 80})
 	el.SetAlignment(walk.AlignHCenterVNear)
 	el.SetSpacing(12)
-	v.empty.SetLayout(el)
+	if err := v.empty.SetLayout(el); err != nil {
+		v.empty.Dispose()
+		return nil, fmt.Errorf("empty state layout: %w", err)
+	}
 	applyDarkSurface(v.empty, uiCanvasBrush)
-	logo, _ := loadLogoIcon(64)
+	logo, err := loadLogoIcon(64)
+	if err != nil {
+		return nil, fmt.Errorf("empty state logo: %w", err)
+	}
 	if logo != nil {
-		im, _ := walk.NewImageView(v.empty)
+		im, imageErr := walk.NewImageView(v.empty)
+		if imageErr != nil {
+			return nil, fmt.Errorf("empty state logo image: %w", imageErr)
+		}
 		im.SetImage(logo)
 		im.SetMinMaxSize(walk.Size{64, 64}, walk.Size{64, 64})
 	}
-	et, _ := walk.NewLabel(v.empty)
+	et, err := walk.NewLabel(v.empty)
+	if err != nil {
+		return nil, fmt.Errorf("empty state title: %w", err)
+	}
 	et.SetText("No Connection Selected")
 	et.SetTextColor(uiTextColor)
-	ef, _ := walk.NewFont("Segoe UI Semibold", 18, 0)
+	ef, err := walk.NewFont("Segoe UI Semibold", 18, 0)
+	if err != nil {
+		return nil, fmt.Errorf("empty state title font: %w", err)
+	}
 	et.SetFont(ef)
-	ed, _ := walk.NewLabel(v.empty)
+	ed, err := walk.NewLabel(v.empty)
+	if err != nil {
+		return nil, fmt.Errorf("empty state description: %w", err)
+	}
 	ed.SetText("Select a connection from the left or import a tunnel to get started.")
 	applyMutedText(ed)
 	v.emptyImport, err = newDarkButton(v.empty, "Import Tunnel(s)", true)
@@ -130,49 +191,97 @@ func NewConfView(parent walk.Container) (*ConfView, error) {
 	if err != nil {
 		return nil, fmt.Errorf("empty add button: %w", err)
 	}
-	v.dashboard, _ = walk.NewComposite(v)
+	v.dashboard, err = walk.NewComposite(v)
+	if err != nil {
+		return nil, fmt.Errorf("dashboard container: %w", err)
+	}
 	dl := walk.NewVBoxLayout()
 	dl.SetMargins(walk.Margins{})
 	dl.SetSpacing(12)
-	v.dashboard.SetLayout(dl)
+	if err := v.dashboard.SetLayout(dl); err != nil {
+		v.dashboard.Dispose()
+		return nil, fmt.Errorf("dashboard layout: %w", err)
+	}
 	applyDarkSurface(v.dashboard, uiCanvasBrush)
 	v.dashboard.SetVisible(false)
-	header, _ := newDashboardCard(v.dashboard, "")
+	header, err := walk.NewComposite(v.dashboard)
+	if err != nil {
+		return nil, fmt.Errorf("dashboard header: %w", err)
+	}
 	hl := walk.NewHBoxLayout()
 	hl.SetMargins(walk.Margins{18, 16, 18, 16})
-	header.SetLayout(hl)
-	left, _ := walk.NewComposite(header)
-	left.SetLayout(walk.NewVBoxLayout())
+	hl.SetSpacing(12)
+	if err := header.SetLayout(hl); err != nil {
+		header.Dispose()
+		return nil, fmt.Errorf("dashboard header layout: %w", err)
+	}
+	applyDarkSurface(header, uiCardBrush)
+	left, err := walk.NewComposite(header)
+	if err != nil {
+		return nil, fmt.Errorf("dashboard header left content: %w", err)
+	}
+	if err := left.SetLayout(walk.NewVBoxLayout()); err != nil {
+		left.Dispose()
+		return nil, fmt.Errorf("dashboard header left layout: %w", err)
+	}
 	applyDarkSurface(left, uiCardBrush)
-	v.title, _ = walk.NewLabel(left)
+	v.title, err = walk.NewLabel(left)
+	if err != nil {
+		return nil, fmt.Errorf("dashboard title: %w", err)
+	}
 	v.title.SetTextColor(uiTextColor)
-	tf, _ := walk.NewFont("Segoe UI Semibold", 22, 0)
+	tf, err := walk.NewFont("Segoe UI Semibold", 22, 0)
+	if err != nil {
+		return nil, fmt.Errorf("dashboard title font: %w", err)
+	}
 	v.title.SetFont(tf)
-	v.state, _ = walk.NewLabel(left)
+	v.state, err = walk.NewLabel(left)
+	if err != nil {
+		return nil, fmt.Errorf("dashboard state: %w", err)
+	}
 	applyMutedText(v.state)
 	walk.NewHSpacer(header)
 	v.connect, err = newDarkButton(header, "Connect", true)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dashboard connect button: %w", err)
 	}
 	v.connect.SetMinMaxSize(walk.Size{170, 52}, walk.Size{170, 52})
 	v.connect.Clicked().Attach(v.onToggle)
-	summary, _ := walk.NewComposite(v.dashboard)
+	summary, err := walk.NewComposite(v.dashboard)
+	if err != nil {
+		return nil, fmt.Errorf("dashboard summary: %w", err)
+	}
 	sl := walk.NewHBoxLayout()
 	sl.SetMargins(walk.Margins{})
 	sl.SetSpacing(12)
-	summary.SetLayout(sl)
+	if err := summary.SetLayout(sl); err != nil {
+		summary.Dispose()
+		return nil, fmt.Errorf("dashboard summary layout: %w", err)
+	}
 	applyDarkSurface(summary, uiCanvasBrush)
 	for _, label := range []string{"VPN IP (IPv4)", "VPN IP (IPv6)", "Endpoint", "Latest Handshake"} {
-		c, _ := newDashboardCard(summary, label)
-		v.summaryValues = append(v.summaryValues, addDashboardRow(c, "", "Not Assigned"))
+		c, cardErr := newDashboardCard(summary, label)
+		if cardErr != nil {
+			return nil, fmt.Errorf("dashboard summary card %q: %w", label, cardErr)
+		}
+		value, rowErr := newDashboardRow(c, "", "Not Assigned")
+		if rowErr != nil {
+			return nil, fmt.Errorf("dashboard summary value %q: %w", label, rowErr)
+		}
+		v.summaryValues = append(v.summaryValues, value)
 		c.SetMinMaxSize(walk.Size{180, 88}, walk.Size{0, 88})
 	}
-	navigation, _ := walk.NewComposite(v.dashboard)
+	navigation, err := walk.NewComposite(v.dashboard)
+	if err != nil {
+		return nil, fmt.Errorf("dashboard navigation: %w", err)
+	}
 	nl := walk.NewHBoxLayout()
 	nl.SetMargins(walk.Margins{})
 	nl.SetSpacing(4)
-	navigation.SetLayout(nl)
+	if err := navigation.SetLayout(nl); err != nil {
+		navigation.Dispose()
+		return nil, fmt.Errorf("dashboard navigation layout: %w", err)
+	}
 	for i, label := range []string{"Overview", "Network", "DNS", "Peer", "Allowed IPs"} {
 		s := dashboardSection(i)
 		b, buttonErr := newDarkButton(navigation, label, false)
@@ -183,24 +292,51 @@ func NewConfView(parent walk.Container) (*ConfView, error) {
 		b.Clicked().Attach(func() { v.showSection(s) })
 	}
 	for i := dashboardOverview; i <= dashboardAllowedIPs; i++ {
-		p, _ := walk.NewComposite(v.dashboard)
-		p.SetLayout(walk.NewVBoxLayout())
+		p, pageErr := walk.NewComposite(v.dashboard)
+		if pageErr != nil {
+			return nil, fmt.Errorf("dashboard page %d: %w", i, pageErr)
+		}
+		if i == dashboardOverview {
+			layout := walk.NewHBoxLayout()
+			layout.SetMargins(walk.Margins{})
+			layout.SetSpacing(12)
+			if layoutErr := p.SetLayout(layout); layoutErr != nil {
+				p.Dispose()
+				return nil, fmt.Errorf("overview layout: %w", layoutErr)
+			}
+		} else {
+			layout := walk.NewVBoxLayout()
+			layout.SetMargins(walk.Margins{})
+			layout.SetSpacing(12)
+			if layoutErr := p.SetLayout(layout); layoutErr != nil {
+				p.Dispose()
+				return nil, fmt.Errorf("dashboard page layout %d: %w", i, layoutErr)
+			}
+		}
 		applyDarkSurface(p, uiCanvasBrush)
 		p.SetVisible(false)
 		v.pages[i] = p
 	}
 	ov := v.pages[dashboardOverview]
-	ol := walk.NewHBoxLayout()
-	ol.SetMargins(walk.Margins{})
-	ol.SetSpacing(12)
-	ov.SetLayout(ol)
-	connection, _ := newDashboardCard(ov, "Connection")
-	v.row(connection, "connection.status", "Status", "Disconnected")
-	v.row(connection, "connection.name", "Tunnel Name", "—")
-	v.row(connection, "connection.addresses", "Addresses", "Not Assigned")
-	v.row(connection, "connection.uptime", "Uptime", "—")
-	v.row(connection, "connection.listen", "Listen Port", "Not configured")
-	traffic, _ := newDashboardCard(ov, "Traffic")
+	connection, err := newDashboardCard(ov, "Connection")
+	if err != nil {
+		return nil, fmt.Errorf("connection card: %w", err)
+	}
+	for _, row := range []struct{ key, label, value string }{
+		{"connection.status", "Status", "Disconnected"},
+		{"connection.name", "Tunnel Name", "—"},
+		{"connection.addresses", "Addresses", "Not Assigned"},
+		{"connection.uptime", "Uptime", "—"},
+		{"connection.listen", "Listen Port", "Not configured"},
+	} {
+		if err := v.row(connection, row.key, row.label, row.value); err != nil {
+			return nil, err
+		}
+	}
+	traffic, err := newDashboardCard(ov, "Traffic")
+	if err != nil {
+		return nil, fmt.Errorf("traffic card: %w", err)
+	}
 	v.trafficGraph, err = newTrafficGraph(traffic, &v.traffic)
 	if err != nil {
 		return nil, fmt.Errorf("traffic graph: %w", err)
@@ -213,20 +349,45 @@ func NewConfView(parent walk.Container) (*ConfView, error) {
 		return nil, fmt.Errorf("traffic summary label: %w", err)
 	}
 	applyMutedText(v.trafficSummary)
-	dns, _ := newDashboardCard(ov, "DNS")
+	dns, err := newDashboardCard(ov, "DNS")
+	if err != nil {
+		return nil, fmt.Errorf("dns card: %w", err)
+	}
 	// The first child is the heading; retain it so DoH can truthfully be
 	// called out as encrypted when configured.
-	v.dnsHeading, _ = dns.Children().At(0).(*walk.Label)
-	v.row(dns, "dns.mode", "Mode", "Not Configured")
-	v.row(dns, "dns.resolver", "Resolver", "Not configured")
-	v.row(dns, "dns.family", "Address Family", "—")
-	v.row(dns, "dns.fallback", "Fallback", "Disabled")
-	peer, _ := newDashboardCard(ov, "Peer")
-	v.row(peer, "peer.endpoint", "Endpoint", "Not Configured")
-	v.row(peer, "peer.allowed", "Allowed IPs", "Not configured")
-	v.row(peer, "peer.keepalive", "Persistent Keepalive", "Disabled")
-	v.row(peer, "peer.handshake", "Latest Handshake", "No handshake yet")
-	v.row(peer, "peer.psk", "Preshared Key", "Not configured")
+	if dns.Children().Len() == 0 {
+		return nil, fmt.Errorf("dns card heading missing")
+	}
+	var ok bool
+	v.dnsHeading, ok = dns.Children().At(0).(*walk.Label)
+	if !ok || v.dnsHeading == nil {
+		return nil, fmt.Errorf("dns card heading has unexpected type")
+	}
+	for _, row := range []struct{ key, label, value string }{
+		{"dns.mode", "Mode", "Not Configured"},
+		{"dns.resolver", "Resolver", "Not configured"},
+		{"dns.family", "Address Family", "—"},
+		{"dns.fallback", "Fallback", "Disabled"},
+	} {
+		if err := v.row(dns, row.key, row.label, row.value); err != nil {
+			return nil, err
+		}
+	}
+	peer, err := newDashboardCard(ov, "Peer")
+	if err != nil {
+		return nil, fmt.Errorf("peer card: %w", err)
+	}
+	for _, row := range []struct{ key, label, value string }{
+		{"peer.endpoint", "Endpoint", "Not Configured"},
+		{"peer.allowed", "Allowed IPs", "Not configured"},
+		{"peer.keepalive", "Persistent Keepalive", "Disabled"},
+		{"peer.handshake", "Latest Handshake", "No handshake yet"},
+		{"peer.psk", "Preshared Key", "Not configured"},
+	} {
+		if err := v.row(peer, row.key, row.label, row.value); err != nil {
+			return nil, err
+		}
+	}
 	v.showSection(dashboardOverview)
 	v.tunnelChangedCB = manager.IPCClientRegisterTunnelChange(v.onChanged)
 	v.updateTicker = time.NewTicker(time.Second)
