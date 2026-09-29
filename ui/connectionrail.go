@@ -32,6 +32,7 @@ type ConnectionRail struct {
 	list         *walk.CustomWidget
 	items        []railItem
 	selectedName string
+	filter       string
 	onSelected   func(string)
 	font         *walk.Font
 	boldFont     *walk.Font
@@ -69,7 +70,10 @@ func NewConnectionRail(parent walk.Container) (*ConnectionRail, error) {
 	rail.search.SetBackground(uiCardBrush)
 	rail.search.SetTextColor(uiTextColor)
 	applyDarkWindow(rail.search.Handle())
-	rail.search.TextChanged().Attach(func() { rail.Load() })
+	rail.search.TextChanged().Attach(func() {
+		rail.filter = strings.ToLower(strings.TrimSpace(rail.search.Text()))
+		rail.Load()
+	})
 
 	rail.font, _ = walk.NewFont("Segoe UI", 10, 0)
 	rail.list, err = walk.NewCustomWidgetPixels(rail, 0, rail.paint)
@@ -123,7 +127,7 @@ func (rail *ConnectionRail) Load() {
 	if err != nil {
 		return
 	}
-	filter := strings.ToLower(strings.TrimSpace(rail.search.Text()))
+	filter := rail.filter
 	items := make([]railItem, 0, len(tunnels))
 	for _, tunnel := range tunnels {
 		if filter != "" && !strings.Contains(strings.ToLower(tunnel.Name), filter) {

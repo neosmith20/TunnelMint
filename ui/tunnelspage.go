@@ -100,6 +100,7 @@ func NewTunnelsPage(parent walk.Container) (*TunnelsPage, error) {
 	if tp.confView, err = NewConfView(tp.currentTunnelContainer); err != nil {
 		return nil, err
 	}
+	tp.confView.SetEmptyActions(tp.onImport, tp.onAddTunnel)
 
 	controlsContainer, err := walk.NewComposite(tp.currentTunnelContainer)
 	if err != nil {
@@ -121,7 +122,10 @@ func NewTunnelsPage(parent walk.Container) (*TunnelsPage, error) {
 	})
 	editTunnel.SetText(l18n.Sprintf("&Edit"))
 	editTunnel.Clicked().Attach(tp.onEditTunnel)
-	editTunnel.SetVisible(IsAdmin)
+	// Editing remains available through Ctrl+E and the context menu.  Keeping
+	// this legacy PushButton hidden prevents a bright stock control from
+	// reappearing below the dashboard.
+	controlsContainer.SetVisible(false)
 
 	disposables.Spare()
 

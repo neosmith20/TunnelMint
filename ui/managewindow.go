@@ -32,9 +32,9 @@ type ManageTunnelsWindow struct {
 }
 
 type productHeader struct {
-	connectionsButton *walk.PushButton
-	logButton         *walk.PushButton
-	settingsButton    *walk.PushButton
+	connectionsButton *darkButton
+	logButton         *darkButton
+	settingsButton    *darkButton
 }
 
 const (
@@ -216,21 +216,15 @@ func addProductHeader(parent walk.Container, disposables *walk.Disposables) (*pr
 	subtitle.SetText(l18n.Sprintf("Private network control"))
 	applyMutedText(subtitle)
 	walk.NewHSpacer(header)
-	if productHeader.connectionsButton, err = walk.NewPushButton(header); err != nil {
+	if productHeader.connectionsButton, err = newDarkButton(header, l18n.Sprintf("Connections"), false); err != nil {
 		return nil, err
 	}
-	productHeader.connectionsButton.SetText(l18n.Sprintf("Connections"))
-	productHeader.connectionsButton.SetBackground(uiHeaderBrush)
-	if productHeader.logButton, err = walk.NewPushButton(header); err != nil {
+	if productHeader.logButton, err = newDarkButton(header, l18n.Sprintf("Log"), false); err != nil {
 		return nil, err
 	}
-	productHeader.logButton.SetText(l18n.Sprintf("Log"))
-	productHeader.logButton.SetBackground(uiHeaderBrush)
-	if productHeader.settingsButton, err = walk.NewPushButton(header); err != nil {
+	if productHeader.settingsButton, err = newDarkButton(header, l18n.Sprintf("Settings"), false); err != nil {
 		return nil, err
 	}
-	productHeader.settingsButton.SetText(l18n.Sprintf("Settings"))
-	productHeader.settingsButton.SetBackground(uiHeaderBrush)
 
 	accent, err := walk.NewComposite(parent)
 	if err != nil {

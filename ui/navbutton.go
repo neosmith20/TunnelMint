@@ -12,12 +12,13 @@ type darkButton struct {
 	*walk.CustomWidget
 	text    string
 	primary bool
+	enabled bool
 	clicked walk.EventPublisher
 	font    *walk.Font
 }
 
 func newDarkButton(parent walk.Container, text string, primary bool) (*darkButton, error) {
-	button := &darkButton{text: text, primary: primary}
+	button := &darkButton{text: text, primary: primary, enabled: true}
 	widget, err := walk.NewCustomWidgetPixels(parent, 0, button.paint)
 	if err != nil {
 		return nil, err
@@ -37,14 +38,23 @@ func newDarkButton(parent walk.Container, text string, primary bool) (*darkButto
 
 func (button *darkButton) Clicked() *walk.Event { return button.clicked.Event() }
 func (button *darkButton) SetText(text string)  { button.text = text; button.Invalidate() }
+func (button *darkButton) SetEnabled(enabled bool) {
+	button.enabled = enabled
+	if button.CustomWidget != nil {
+		button.CustomWidget.SetEnabled(enabled)
+		button.Invalidate()
+	}
+}
 
 func (button *darkButton) paint(canvas *walk.Canvas, bounds walk.Rectangle) error {
 	brush := uiCardBrush
 	color := uiTextColor
 	// Paint can run during NewCustomWidgetPixels before the embedded widget is
 	// assigned, so presentation must not query its HWND-backed state here.
-	if button.primary {
+	if button.primary && button.enabled {
 		brush, color = uiAccentBrush, walk.RGB(4, 20, 28)
+	} else if !button.enabled {
+		color = uiMutedColor
 	}
 	canvas.FillRectangle(brush, bounds)
 	return canvas.DrawTextPixels(button.text, button.font, color, bounds, walk.TextCenter|walk.TextVCenter|walk.TextSingleLine)
