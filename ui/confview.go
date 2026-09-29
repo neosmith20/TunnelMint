@@ -4,7 +4,9 @@ package ui
 
 import (
 	"fmt"
+	"log"
 	"net/netip"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -120,8 +122,14 @@ func NewConfView(parent walk.Container) (*ConfView, error) {
 	ed, _ := walk.NewLabel(v.empty)
 	ed.SetText("Select a connection from the left or import a tunnel to get started.")
 	applyMutedText(ed)
-	v.emptyImport, _ = newDarkButton(v.empty, "Import Tunnel(s)", true)
-	v.emptyAdd, _ = newDarkButton(v.empty, "Add Tunnel", false)
+	v.emptyImport, err = newDarkButton(v.empty, "Import Tunnel(s)", true)
+	if err != nil {
+		return nil, fmt.Errorf("empty import button: %w", err)
+	}
+	v.emptyAdd, err = newDarkButton(v.empty, "Add Tunnel", false)
+	if err != nil {
+		return nil, fmt.Errorf("empty add button: %w", err)
+	}
 	v.dashboard, _ = walk.NewComposite(v)
 	dl := walk.NewVBoxLayout()
 	dl.SetMargins(walk.Margins{})
@@ -167,7 +175,10 @@ func NewConfView(parent walk.Container) (*ConfView, error) {
 	navigation.SetLayout(nl)
 	for i, label := range []string{"Overview", "Network", "DNS", "Peer", "Allowed IPs"} {
 		s := dashboardSection(i)
-		b, _ := newDarkButton(navigation, label, false)
+		b, buttonErr := newDarkButton(navigation, label, false)
+		if buttonErr != nil {
+			return nil, fmt.Errorf("navigation button %q: %w", label, buttonErr)
+		}
 		v.nav[s] = b
 		b.Clicked().Attach(func() { v.showSection(s) })
 	}
@@ -190,8 +201,17 @@ func NewConfView(parent walk.Container) (*ConfView, error) {
 	v.row(connection, "connection.uptime", "Uptime", "—")
 	v.row(connection, "connection.listen", "Listen Port", "Not configured")
 	traffic, _ := newDashboardCard(ov, "Traffic")
-	v.trafficGraph, _ = newTrafficGraph(traffic, &v.traffic)
-	v.trafficSummary, _ = walk.NewLabel(traffic)
+	v.trafficGraph, err = newTrafficGraph(traffic, &v.traffic)
+	if err != nil {
+		return nil, fmt.Errorf("traffic graph: %w", err)
+	}
+	if v.trafficGraph == nil {
+		return nil, fmt.Errorf("traffic graph constructor returned nil widget")
+	}
+	v.trafficSummary, err = walk.NewLabel(traffic)
+	if err != nil {
+		return nil, fmt.Errorf("traffic summary label: %w", err)
+	}
 	applyMutedText(v.trafficSummary)
 	dns, _ := newDashboardCard(ov, "DNS")
 	// The first child is the heading; retain it so DoH can truthfully be
@@ -229,20 +249,37 @@ func (v *ConfView) showSection(s dashboardSection) {
 	}
 }
 func (v *ConfView) loop() {
+	log.Printf("ConfView.loop ENTER")
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			log.Printf("PANIC IN ConfView.loop: %v\n%s", recovered, debug.Stack())
+			if syncer, ok := log.Writer().(interface{ Sync() error }); ok {
+				_ = syncer.Sync()
+			}
+			panic(recovered)
+		}
+	}()
 	for {
 		select {
 		case <-v.updateTicker.C:
+			log.Printf("ConfView.loop TICK begin")
 			if v.tunnel != nil && v.Visible() {
 				t := v.tunnel
+				log.Printf("ConfView.loop before State")
 				state, _ := t.State()
+				log.Printf("ConfView.loop after State")
 				c := conf.Config{}
 				if state == manager.TunnelStarted {
+					log.Printf("ConfView.loop before RuntimeConfig")
 					c, _ = t.RuntimeConfig()
 				}
 				if c.Name == "" {
+					log.Printf("ConfView.loop before StoredConfig")
 					c, _ = t.StoredConfig()
 				}
+				log.Printf("ConfView.loop before Synchronize")
 				v.Synchronize(func() { v.setTunnel(t, &c, state) })
+				log.Printf("ConfView.loop TICK queued")
 			}
 		case <-v.quit:
 			return
