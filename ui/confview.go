@@ -309,11 +309,11 @@ func newInterfaceView(parent walk.Container) (*interfaceView, error) {
 	disposables.Add(iv.status)
 
 	items := []labelTextLineItem{
-		{l18n.Sprintf("Public key:"), &iv.publicKey},
-		{l18n.Sprintf("Listen port:"), &iv.listenPort},
+		{l18n.Sprintf("Public Key:"), &iv.publicKey},
+		{l18n.Sprintf("Listen Port:"), &iv.listenPort},
 		{l18n.Sprintf("MTU:"), &iv.mtu},
 		{l18n.Sprintf("Addresses:"), &iv.addresses},
-		{l18n.Sprintf("DNS servers:"), &iv.dns},
+		{l18n.Sprintf("DNS Servers:"), &iv.dns},
 		{l18n.Sprintf("Scripts:"), &iv.scripts},
 		{l18n.Sprintf("Table:"), &iv.table},
 	}
@@ -339,12 +339,12 @@ func newPeerView(parent walk.Container) (*peerView, error) {
 	pv := new(peerView)
 
 	items := []labelTextLineItem{
-		{l18n.Sprintf("Public key:"), &pv.publicKey},
-		{l18n.Sprintf("Preshared key:"), &pv.presharedKey},
+		{l18n.Sprintf("Public Key:"), &pv.publicKey},
+		{l18n.Sprintf("Preshared Key:"), &pv.presharedKey},
 		{l18n.Sprintf("Allowed IPs:"), &pv.allowedIPs},
 		{l18n.Sprintf("Endpoint:"), &pv.endpoint},
-		{l18n.Sprintf("Persistent keepalive:"), &pv.persistentKeepalive},
-		{l18n.Sprintf("Latest handshake:"), &pv.latestHandshake},
+		{l18n.Sprintf("Persistent Keepalive:"), &pv.persistentKeepalive},
+		{l18n.Sprintf("Latest Handshake:"), &pv.latestHandshake},
 		{l18n.Sprintf("Transfer:"), &pv.transfer},
 	}
 	var err error

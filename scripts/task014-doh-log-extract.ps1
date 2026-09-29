@@ -21,9 +21,9 @@ try {
         throw 'Run this script from an Administrator PowerShell window.'
     }
 
-    $executable = 'C:\Program Files\TunnelMint\tunnelmint.exe'
+    $executable = 'C:\Program Files\TunnelMint\wirehush.exe'
     if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
-        throw 'The installed TunnelMint executable was not found.'
+        throw 'The installed WireHush executable was not found.'
     }
 
     # /dumplog is held in memory only. Keep exclusively the fixed diagnostic

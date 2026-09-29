@@ -33,7 +33,7 @@ type ManageTunnelsWindow struct {
 const (
 	manageWindowWindowClass = product.ManagerWindowClass
 	raiseMsg                = win.WM_USER + 0x3510
-	aboutTunnelMintCmd      = 0x37
+	aboutWireHushCmd        = 0x37
 )
 
 var taskbarButtonCreatedMsg uint32
@@ -131,8 +131,8 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 			CbSize:     uint32(unsafe.Sizeof(win.MENUITEMINFO{})),
 			FMask:      win.MIIM_ID | win.MIIM_STRING | win.MIIM_FTYPE,
 			FType:      win.MIIM_STRING,
-			DwTypeData: windows.StringToUTF16Ptr(l18n.Sprintf("&About TunnelMint…")),
-			WID:        uint32(aboutTunnelMintCmd),
+			DwTypeData: windows.StringToUTF16Ptr(l18n.Sprintf("&About WireHush…")),
+			WID:        uint32(aboutWireHushCmd),
 		})
 		win.InsertMenuItem(systemMenu, 1, true, &win.MENUITEMINFO{
 			CbSize: uint32(unsafe.Sizeof(win.MENUITEMINFO{})),
@@ -181,7 +181,7 @@ func addProductHeader(parent walk.Container, disposables *walk.Disposables) erro
 	if err != nil {
 		return err
 	}
-	title.SetText(l18n.Sprintf("TunnelMint"))
+	title.SetText(l18n.Sprintf("WireHush"))
 	titleFont, err := walk.NewFont("Segoe UI Semibold", 13, 0)
 	if err == nil {
 		title.SetFont(titleFont)
@@ -273,7 +273,7 @@ func (mtw *ManageTunnelsWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lPara
 			walk.App().Exit(198)
 		}
 	case win.WM_SYSCOMMAND:
-		if wParam == aboutTunnelMintCmd {
+		if wParam == aboutWireHushCmd {
 			onAbout(mtw)
 			return 0
 		}

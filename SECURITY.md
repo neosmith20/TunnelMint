@@ -1,10 +1,10 @@
 # Security Policy
 
-TunnelMint is networking and security-sensitive software. Vulnerability reports are welcome and should be handled privately whenever possible.
+WireHush is networking and security-sensitive software. Vulnerability reports are welcome and should be handled privately whenever possible.
 
 ## Supported Versions
 
-TunnelMint is currently in early development and has no production-supported release yet.
+WireHush is currently in early development and has no production-supported release yet.
 
 Once releases begin, security fixes will target the latest supported release unless otherwise stated in release notes.
 
@@ -18,7 +18,7 @@ If private vulnerability reporting is unavailable, open a minimal public issue s
 
 Useful information in a private report includes:
 
-- affected TunnelMint version or commit
+- affected WireHush version or commit
 - operating system and version
 - clear reproduction steps
 - expected and observed behavior
@@ -30,4 +30,4 @@ Please allow reasonable time for investigation and remediation before public dis
 
 ## Security Expectations
 
-TunnelMint should fail safely when security-sensitive behavior is uncertain. Production code must not disable certificate validation, silently leak DNS, expose tunnel secrets, or silently route around an expected tunnel path.
+WireHush should fail safely when security-sensitive behavior is uncertain. Production code must not disable certificate validation, silently leak DNS, expose tunnel secrets, or silently route around an expected tunnel path.

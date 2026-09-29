@@ -1,26 +1,32 @@
 /* SPDX-License-Identifier: MIT
  *
- * Copyright (C) 2026 TunnelMint contributors. All Rights Reserved.
+ * Copyright (C) 2026 WireHush contributors. All Rights Reserved.
  */
 
-// Package product contains the names owned by TunnelMint's Windows runtime.
-// WireGuard protocol and driver identifiers stay in their upstream packages;
-// these values identify the application and its persistent resources.
+// Package product contains the WireHush product identity. Persistent values
+// marked Legacy are intentionally retained so an installed TunnelMint build
+// upgrades without losing tunnel configurations or colliding with WireGuard.
 package product
 
 const (
-	Name = "TunnelMint"
+	Name = "WireHush"
 
-	ManagerServiceName         = "TunnelMintManager"
-	ManagerServiceDisplayName  = "TunnelMint Manager"
-	TunnelServicePrefix        = "TunnelMintTunnel$"
-	TunnelServiceDisplayPrefix = "TunnelMint Tunnel: "
+	// These are stable Windows service keys, not user-facing names.
+	LegacyManagerServiceName  = "TunnelMintManager"
+	LegacyTunnelServicePrefix = "TunnelMintTunnel$"
+	LegacyDataDirectoryName   = "TunnelMint"
+	LegacyAdminRegistryKey    = `Software\TunnelMint`
 
-	DataDirectoryName = "TunnelMint"
-	AdminRegistryKey  = `Software\TunnelMint`
+	ManagerServiceName         = LegacyManagerServiceName
+	ManagerServiceDisplayName  = "WireHush Manager"
+	TunnelServicePrefix        = LegacyTunnelServicePrefix
+	TunnelServiceDisplayPrefix = "WireHush Tunnel: "
 
-	ManagerWindowClass = "TunnelMint UI - Manage Tunnels"
-	ManagerWindowTitle = "TunnelMint"
+	DataDirectoryName = LegacyDataDirectoryName
+	AdminRegistryKey  = LegacyAdminRegistryKey
 
-	UserAgentName = "TunnelMint"
+	ManagerWindowClass = "WireHush UI - Manage Tunnels"
+	ManagerWindowTitle = "WireHush"
+
+	UserAgentName = "WireHush"
 )

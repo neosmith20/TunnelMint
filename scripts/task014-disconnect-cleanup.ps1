@@ -40,12 +40,12 @@ try {
     $manager = Get-Service -Name 'TunnelMintManager' -ErrorAction Stop
     $result.managerRunning = $manager.Status -eq 'Running'
     if (-not $result.managerRunning) {
-        throw 'TunnelMintManager is not running.'
+        throw 'WireHush Manager service (TunnelMintManager) is not running.'
     }
 
     $services = @(Get-Service -Name 'TunnelMintTunnel$*' -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Running' })
     if ($services.Count -ne 1) {
-        throw "Expected exactly one running TunnelMint tunnel service; found $($services.Count)."
+        throw "Expected exactly one running WireHush tunnel service; found $($services.Count)."
     }
     $serviceName = $services[0].Name
     $alias = $serviceName.Substring('TunnelMintTunnel$'.Length)
@@ -54,10 +54,10 @@ try {
         adapter = Get-AdapterSummary -Alias $alias
     }
     if (-not $result.before.adapter.up -or $result.before.adapter.routeCount -eq 0) {
-        throw 'The active TunnelMint adapter is not up with routes before disconnect.'
+        throw 'The active WireHush adapter is not up with routes before disconnect.'
     }
 
-    Write-Host 'Disconnect the active tunnel from the TunnelMint UI, wait for its status to show disconnected, then press Enter.'
+    Write-Host 'Disconnect the active tunnel from the WireHush UI, wait for its status to show disconnected, then press Enter.'
     [void] (Read-Host)
 
     $afterService = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
@@ -67,13 +67,13 @@ try {
         adapter = Get-AdapterSummary -Alias $alias
     }
     if ($result.after.serviceRunning) {
-        throw 'The TunnelMint tunnel service is still running after disconnect.'
+        throw 'The WireHush tunnel service is still running after disconnect.'
     }
     if ($result.after.adapter.up) {
-        throw 'The TunnelMint adapter is still Up after disconnect.'
+        throw 'The WireHush adapter is still Up after disconnect.'
     }
     if ($result.after.adapter.routeCount -gt 0) {
-        throw 'TunnelMint adapter routes remain after disconnect.'
+        throw 'WireHush adapter routes remain after disconnect.'
     }
 
     $result.postDisconnect.tcpConnected = [bool] (Test-NetConnection -ComputerName '1.1.1.1' -Port 443 -InformationLevel Quiet -WarningAction SilentlyContinue)

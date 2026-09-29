@@ -103,7 +103,7 @@ func newEditDialog(owner walk.Form, tunnel *manager.Tunnel) (*EditDialog, error)
 	}
 	layout.SetRange(pubkeyLabel, walk.Rectangle{0, 1, 1, 1})
 	pubkeyLabel.SetTextAlignment(walk.AlignHFarVCenter)
-	pubkeyLabel.SetText(l18n.Sprintf("&Public key:"))
+	pubkeyLabel.SetText(l18n.Sprintf("&Public Key:"))
 
 	if dlg.pubkeyEdit, err = walk.NewLineEdit(dlg); err != nil {
 		return nil, err

@@ -14,7 +14,7 @@ List any new dependency, copied/adapted code, asset, or other third-party materi
 
 By checking the CLA box below and submitting or updating this pull request, I confirm that I have read and accept `CONTRIBUTOR_LICENSE_AGREEMENT.md` for the copyrightable Contributions contained in this pull request.
 
-I understand that I retain copyright in my original Contribution, while granting the TunnelMint Project Owner the permanent, worldwide, irrevocable rights described in the CLA, including the rights to modify, distribute, sublicense, relicense, and commercially use the Contribution.
+I understand that I retain copyright in my original Contribution, while granting the WireHush Project Owner the permanent, worldwide, irrevocable rights described in the CLA, including the rights to modify, distribute, sublicense, relicense, and commercially use the Contribution.
 
 - [ ] I have read and accept `CONTRIBUTOR_LICENSE_AGREEMENT.md` for the Contributions in this pull request.
 - [ ] I confirm that I have the right to submit these changes.

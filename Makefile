@@ -13,7 +13,7 @@ rwildcard=$(foreach d,$(filter-out .deps,$(wildcard $1*)),$(call rwildcard,$d/,$
 SOURCE_FILES := $(call rwildcard,,*.go) $(call rwildcard,.overlay/,*) .deps/go/prepared go.mod go.sum
 RESOURCE_FILES := resources.rc version/version.go manifest.xml $(patsubst %.svg,%.ico,$(wildcard ui/icon/*.svg)) .deps/wireguard-nt/prepared
 
-ui/icon/tunnelmint.ico: ui/icon/wirehush.png
+ui/icon/wirehush.ico: ui/icon/wirehush.png
 	convert -background none "$<" -define icon:auto-resize="256,192,128,96,64,48,40,32,24,20,16" -compress zip "$@"
 
 DEPLOYMENT_HOST ?= winvm

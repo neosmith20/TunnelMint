@@ -64,7 +64,7 @@ func NewLogPage() (*LogPage, error) {
 	contextMenu.Actions().Add(copyAction)
 	lp.ShortcutActions().Add(copyAction)
 	selectAllAction := walk.NewAction()
-	selectAllAction.SetText(l18n.Sprintf("Select &all"))
+	selectAllAction.SetText(l18n.Sprintf("Select &All"))
 	selectAllAction.SetShortcut(walk.Shortcut{walk.ModControl, walk.KeyA})
 	selectAllAction.Triggered().Attach(lp.onSelectAll)
 	contextMenu.Actions().Add(selectAllAction)

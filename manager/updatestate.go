@@ -20,10 +20,10 @@ const (
 var updateState = UpdateStateUnknown
 
 func checkForUpdates() {
-	// TunnelMint has no signed update infrastructure yet. Keep the upstream
+	// WireHush has no signed update infrastructure yet. Keep the upstream
 	// updater package available for a future implementation, but never contact
 	// the upstream WireGuard update service from the runtime.
-	log.Println("TunnelMint automatic updates are disabled")
+	log.Println("WireHush automatic updates are disabled")
 	updateState = UpdateStateUpdatesDisabledUnofficialBuild
 	IPCServerNotifyUpdateFound(updateState)
 }

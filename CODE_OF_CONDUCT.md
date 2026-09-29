@@ -1,6 +1,6 @@
 # Code of Conduct
 
-TunnelMint welcomes constructive participation from users, testers, contributors, and maintainers.
+WireHush welcomes constructive participation from users, testers, contributors, and maintainers.
 
 ## Expected Conduct
 

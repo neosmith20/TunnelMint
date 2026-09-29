@@ -1,20 +1,20 @@
-# Contributing to TunnelMint
+# Contributing to WireHush
 
-Thanks for helping improve TunnelMint.
+Thanks for helping improve WireHush.
 
-TunnelMint is intentionally focused on a small, reliable user experience. Contributions should follow the project's KISS principle: solve the problem with the smallest safe change that preserves compatibility and security.
+WireHush is intentionally focused on a small, reliable user experience. Contributions should follow the project's KISS principle: solve the problem with the smallest safe change that preserves compatibility and security.
 
 ## Licensing and contribution policy
 
-TunnelMint is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+WireHush is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE).
 
 - **Bug reports, feature suggestions, logs, testing results, and general feedback** may be submitted freely without accepting the Contributor License Agreement.
-- **Code, documentation, artwork, tests, or any other copyrightable contribution** intended for inclusion in TunnelMint requires acceptance of the [Contributor License Agreement](CONTRIBUTOR_LICENSE_AGREEMENT.md) ("CLA").
-- Contributors retain copyright in their original Contributions, but the CLA grants the TunnelMint Project Owner permanent, worldwide, irrevocable rights to use, modify, distribute, sublicense, relicense, and commercially use those Contributions.
-- Those rights include use in free, source-available, proprietary, paid, hosted, bundled, appliance, enterprise, or other current or future TunnelMint offerings.
-- A contributor is not entitled to royalties, ownership in TunnelMint, or other compensation solely because a Contribution is used.
+- **Code, documentation, artwork, tests, or any other copyrightable contribution** intended for inclusion in WireHush requires acceptance of the [Contributor License Agreement](CONTRIBUTOR_LICENSE_AGREEMENT.md) ("CLA").
+- Contributors retain copyright in their original Contributions, but the CLA grants the WireHush Project Owner permanent, worldwide, irrevocable rights to use, modify, distribute, sublicense, relicense, and commercially use those Contributions.
+- Those rights include use in free, source-available, proprietary, paid, hosted, bundled, appliance, enterprise, or other current or future WireHush offerings.
+- A contributor is not entitled to royalties, ownership in WireHush, or other compensation solely because a Contribution is used.
 - If a Contribution may be owned in whole or in part by an employer, client, school, or another entity, the contributor must disclose that before merge. Authorization from that entity may be required.
-- TunnelMint may decline any Contribution whose ownership, provenance, licensing, or third-party rights are unclear.
+- WireHush may decline any Contribution whose ownership, provenance, licensing, or third-party rights are unclear.
 
 For GitHub pull requests, the CLA may be accepted electronically using the acknowledgement in the project's pull request template. Maintainers must not merge an external copyrightable Contribution until the required acceptance has been recorded.
 

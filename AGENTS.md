@@ -1,10 +1,10 @@
-# TunnelMint Agent Instructions
+# WireHush Agent Instructions
 
 ## Project Goal
 
-TunnelMint is a simple, user-friendly VPN client. The first target is Windows. Android is planned only after the Windows implementation is stable and polished.
+WireHush is a simple, user-friendly VPN client. The first target is Windows. Android is planned only after the Windows implementation is stable and polished.
 
-TunnelMint uses WireGuard as the underlying tunnel technology. Everything else in this document refers to TunnelMint itself.
+WireHush uses WireGuard as the underlying tunnel technology. Everything else in this document refers to WireHush itself.
 
 The project follows one rule above all others: **KISS — Keep It Simple.**
 
@@ -12,7 +12,7 @@ Do not add complexity unless it is required for correctness, security, compatibi
 
 ## Core Behavior
 
-TunnelMint must preserve ordinary tunnel behavior for standard configurations.
+WireHush must preserve ordinary tunnel behavior for standard configurations.
 
 Examples:
 
@@ -47,7 +47,7 @@ Bootstrap resolvers must have sensible built-in defaults and be configurable fro
 - Reuse proven tunnel and platform integration code where appropriate.
 - Keep encrypted DNS and related additions outside the tunnel protocol itself.
 - Prefer automatic behavior with safe defaults over unnecessary configuration.
-- Keep the UI simple and familiar, but make TunnelMint visually and functionally its own application.
+- Keep the UI simple and familiar, but make WireHush visually and functionally its own application.
 - Avoid unnecessary dependencies.
 - Avoid unnecessary background services, frameworks, runtimes, and telemetry.
 - Never add tracking, analytics, advertising, or account requirements unless explicitly approved.

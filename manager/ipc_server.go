@@ -290,7 +290,7 @@ func (s *ManagerService) UpdateState() UpdateState {
 }
 
 func (s *ManagerService) Update() {
-	IPCServerNotifyUpdateProgress(updater.DownloadProgress{Error: errors.New("TunnelMint updates are disabled until signed release infrastructure is available")})
+	IPCServerNotifyUpdateProgress(updater.DownloadProgress{Error: errors.New("WireHush updates are disabled until signed release infrastructure is available")})
 }
 
 func (s *ManagerService) ServeConn(reader io.Reader, writer io.Writer) {

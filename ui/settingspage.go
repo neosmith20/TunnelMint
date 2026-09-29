@@ -2,7 +2,7 @@
 
 /* SPDX-License-Identifier: MIT
  *
- * Copyright (C) 2026 TunnelMint contributors. All Rights Reserved.
+ * Copyright (C) 2026 WireHush contributors. All Rights Reserved.
  */
 
 package ui
@@ -72,11 +72,11 @@ func NewSettingsPage() (*SettingsPage, error) {
 		fn   func()
 	}{
 		{l18n.Sprintf("Enable / Disable"), page.toggleSelected},
-		{l18n.Sprintf("Move up"), func() { page.moveSelected(-1) }},
-		{l18n.Sprintf("Move down"), func() { page.moveSelected(1) }},
+		{l18n.Sprintf("Move Up"), func() { page.moveSelected(-1) }},
+		{l18n.Sprintf("Move Down"), func() { page.moveSelected(1) }},
 		{l18n.Sprintf("Add…"), page.addCustom},
 		{l18n.Sprintf("Remove"), page.removeSelected},
-		{l18n.Sprintf("Restore defaults"), page.restoreDefaults},
+		{l18n.Sprintf("Restore Defaults"), page.restoreDefaults},
 	} {
 		button, err := walk.NewPushButton(buttons)
 		if err != nil {
@@ -191,13 +191,13 @@ func (model *bootstrapSettingsModel) ItemCount() int { return len(model.entries)
 
 func (model *bootstrapSettingsModel) Value(index int) interface{} {
 	entry := model.entries[index]
-	state := "disabled"
+	state := "Disabled"
 	if entry.Enabled {
-		state = "enabled"
+		state = "Enabled"
 	}
-	kind := "built-in"
+	kind := "Built-In"
 	if entry.Custom {
-		kind = "custom"
+		kind = "Custom"
 	}
 	return fmt.Sprintf("[%s] %s (%s)", state, entry.Address, kind)
 }
@@ -209,13 +209,13 @@ func runBootstrapResolverDialog(owner walk.Form) (string, bool) {
 		return "", false
 	}
 	defer dialog.Dispose()
-	dialog.SetTitle(l18n.Sprintf("Add bootstrap resolver"))
+	dialog.SetTitle(l18n.Sprintf("Add Bootstrap Resolver"))
 	layout := walk.NewGridLayout()
 	layout.SetMargins(walk.Margins{10, 10, 10, 10})
 	layout.SetSpacing(6)
 	dialog.SetLayout(layout)
 	label, _ := walk.NewTextLabel(dialog)
-	label.SetText(l18n.Sprintf("IP address:"))
+	label.SetText(l18n.Sprintf("IP Address:"))
 	layout.SetRange(label, walk.Rectangle{0, 0, 1, 1})
 	edit, err := walk.NewLineEdit(dialog)
 	if err != nil {

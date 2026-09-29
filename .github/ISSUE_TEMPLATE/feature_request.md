@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest a focused TunnelMint improvement
+about: Suggest a focused WireHush improvement
 title: "[Feature] "
 labels: enhancement
 assignees: ""
@@ -14,9 +14,9 @@ What problem would this feature solve?
 
 Describe the simplest user-facing behavior you want.
 
-## Why It Fits TunnelMint
+## Why It Fits WireHush
 
-Explain how this supports TunnelMint's KISS philosophy and core VPN/DNS purpose.
+Explain how this supports WireHush's KISS philosophy and core VPN/DNS purpose.
 
 ## Additional Context
 

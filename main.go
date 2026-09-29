@@ -304,7 +304,7 @@ func main() {
 		if len(os.Args) != 2 {
 			usage()
 		}
-		log.Println("TunnelMint updates are disabled until signed release infrastructure is available")
+		log.Println("WireHush updates are disabled until signed release infrastructure is available")
 		return
 	case "/removedriver":
 		if len(os.Args) != 2 {

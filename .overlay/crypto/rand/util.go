@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // This is the small Go 1.27 crypto/rand compatibility surface still required
-// by crypto/rsa after TunnelMint excludes crypto/rand/util.go to avoid the
+// by crypto/rsa after WireHush excludes crypto/rand/util.go to avoid the
 // FIPS DRBG dependency tree. It intentionally uses the supplied reader
 // directly and does not import crypto/internal/rand or crypto/internal/fips140.
 

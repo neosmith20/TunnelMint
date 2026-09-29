@@ -148,7 +148,7 @@ func (tp *TunnelsPage) CreateToolbar() error {
 	}
 	tp.AddDisposable(addMenu)
 	importAction := walk.NewAction()
-	importAction.SetText(l18n.Sprintf("&Import tunnel(s) from file…"))
+	importAction.SetText(l18n.Sprintf("&Import Tunnel(s) From File…"))
 	importActionIcon, _ := loadSystemIcon("imageres", -3, 16)
 	importAction.SetImage(importActionIcon)
 	importAction.SetShortcut(walk.Shortcut{walk.ModControl, walk.KeyO})
@@ -156,7 +156,7 @@ func (tp *TunnelsPage) CreateToolbar() error {
 	importAction.Triggered().Attach(tp.onImport)
 	addMenu.Actions().Add(importAction)
 	addAction := walk.NewAction()
-	addAction.SetText(l18n.Sprintf("Add &empty tunnel…"))
+	addAction.SetText(l18n.Sprintf("Add &Empty Tunnel…"))
 	addActionIcon, _ := loadSystemIcon("imageres", -2, 16)
 	addAction.SetImage(addActionIcon)
 	addAction.SetShortcut(walk.Shortcut{walk.ModControl, walk.KeyN})
@@ -176,7 +176,7 @@ func (tp *TunnelsPage) CreateToolbar() error {
 	deleteActionIcon, _ := loadSystemIcon("shell32", -240, 16)
 	deleteAction.SetImage(deleteActionIcon)
 	deleteAction.SetShortcut(walk.Shortcut{0, walk.KeyDelete})
-	deleteAction.SetToolTip(l18n.Sprintf("Remove selected tunnel(s)"))
+	deleteAction.SetToolTip(l18n.Sprintf("Remove Selected Tunnel(s)"))
 	deleteAction.Triggered().Attach(tp.onDelete)
 	tp.listToolbar.Actions().Add(deleteAction)
 	tp.listToolbar.Actions().Add(walk.NewSeparatorAction())
@@ -184,7 +184,7 @@ func (tp *TunnelsPage) CreateToolbar() error {
 	exportAction := walk.NewAction()
 	exportActionIcon, _ := loadSystemIcon("imageres", -174, 16)
 	exportAction.SetImage(exportActionIcon)
-	exportAction.SetToolTip(l18n.Sprintf("Export all tunnels to zip"))
+	exportAction.SetToolTip(l18n.Sprintf("Export All Tunnels To Zip"))
 	exportAction.Triggered().Attach(tp.onExportTunnels)
 	tp.listToolbar.Actions().Add(exportAction)
 
@@ -207,41 +207,41 @@ func (tp *TunnelsPage) CreateToolbar() error {
 	contextMenu.Actions().Add(toggleAction)
 	contextMenu.Actions().Add(walk.NewSeparatorAction())
 	importAction2 := walk.NewAction()
-	importAction2.SetText(l18n.Sprintf("&Import tunnel(s) from file…"))
+	importAction2.SetText(l18n.Sprintf("&Import Tunnel(s) From File…"))
 	importAction2.SetShortcut(walk.Shortcut{walk.ModControl, walk.KeyO})
 	importAction2.Triggered().Attach(tp.onImport)
 	importAction2.SetVisible(IsAdmin)
 	contextMenu.Actions().Add(importAction2)
 	tp.ShortcutActions().Add(importAction2)
 	addAction2 := walk.NewAction()
-	addAction2.SetText(l18n.Sprintf("Add &empty tunnel…"))
+	addAction2.SetText(l18n.Sprintf("Add &Empty Tunnel…"))
 	addAction2.SetShortcut(walk.Shortcut{walk.ModControl, walk.KeyN})
 	addAction2.Triggered().Attach(tp.onAddTunnel)
 	addAction2.SetVisible(IsAdmin)
 	contextMenu.Actions().Add(addAction2)
 	tp.ShortcutActions().Add(addAction2)
 	exportAction2 := walk.NewAction()
-	exportAction2.SetText(l18n.Sprintf("Export all tunnels to &zip…"))
+	exportAction2.SetText(l18n.Sprintf("Export All Tunnels To &Zip…"))
 	exportAction2.Triggered().Attach(tp.onExportTunnels)
 	exportAction2.SetVisible(IsAdmin)
 	contextMenu.Actions().Add(exportAction2)
 	contextMenu.Actions().Add(walk.NewSeparatorAction())
 	editAction := walk.NewAction()
-	editAction.SetText(l18n.Sprintf("Edit &selected tunnel…"))
+	editAction.SetText(l18n.Sprintf("&Edit Selected Tunnel…"))
 	editAction.SetShortcut(walk.Shortcut{walk.ModControl, walk.KeyE})
 	editAction.SetVisible(IsAdmin)
 	editAction.Triggered().Attach(tp.onEditTunnel)
 	contextMenu.Actions().Add(editAction)
 	tp.ShortcutActions().Add(editAction)
 	deleteAction2 := walk.NewAction()
-	deleteAction2.SetText(l18n.Sprintf("&Remove selected tunnel(s)"))
+	deleteAction2.SetText(l18n.Sprintf("&Remove Selected Tunnel(s)"))
 	deleteAction2.SetShortcut(walk.Shortcut{0, walk.KeyDelete})
 	deleteAction2.SetVisible(IsAdmin)
 	deleteAction2.Triggered().Attach(tp.onDelete)
 	contextMenu.Actions().Add(deleteAction2)
 	tp.listView.ShortcutActions().Add(deleteAction2)
 	selectAllAction := walk.NewAction()
-	selectAllAction.SetText(l18n.Sprintf("Select &all"))
+	selectAllAction.SetText(l18n.Sprintf("Select &All"))
 	selectAllAction.SetShortcut(walk.Shortcut{walk.ModControl, walk.KeyA})
 	selectAllAction.SetVisible(IsAdmin)
 	selectAllAction.Triggered().Attach(tp.onSelectAll)
@@ -553,7 +553,7 @@ func (tp *TunnelsPage) onSelectAll() {
 func (tp *TunnelsPage) onImport() {
 	dlg := walk.FileDialog{
 		Filter: l18n.Sprintf("Configuration Files (*.zip, *.conf)|*.zip;*.conf|All Files (*.*)|*.*"),
-		Title:  l18n.Sprintf("Import tunnel(s) from file"),
+		Title:  l18n.Sprintf("Import Tunnel(s) From File"),
 	}
 
 	if ok, _ := dlg.ShowOpenMultiple(tp.Form()); !ok {
@@ -593,7 +593,7 @@ func (tp *TunnelsPage) swapFiller(enabled bool) bool {
 
 func (tp *TunnelsPage) onTunnelsChanged() {
 	if tp.swapFiller(tp.listView.model.RowCount() == 0) {
-		tp.fillerButton.SetText(l18n.Sprintf("Import tunnel(s) from file"))
+		tp.fillerButton.SetText(l18n.Sprintf("Import Tunnel(s) From File"))
 		tp.fillerHandler = tp.onImport
 	}
 }
