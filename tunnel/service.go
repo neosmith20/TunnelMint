@@ -162,6 +162,11 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 			serviceError = services.ErrorSetNetConfig
 			return
 		}
+		configuredBootstrap = bootstrapResolversForConfig(config, configuredBootstrap)
+		if len(configuredBootstrap) == 0 {
+			serviceError = services.ErrorSetNetConfig
+			return
+		}
 		resolver := bootstrap.NewResolver(configuredBootstrap)
 		resolver.Timeout = dohRuntimeTimeout
 		err = config.ResolveEndpointsWith(func(host string) ([]netip.Addr, error) {
