@@ -23,10 +23,11 @@ import (
 )
 
 type TunnelsPage struct {
-	*walk.TabPage
+	*walk.Composite
 
 	listView      *ListView
 	listContainer walk.Container
+	rail          *ConnectionRail
 	listToolbar   *walk.ToolBar
 	confView      *ConfView
 	fillerButton  *walk.PushButton
@@ -36,18 +37,17 @@ type TunnelsPage struct {
 	currentTunnelContainer *walk.Composite
 }
 
-func NewTunnelsPage() (*TunnelsPage, error) {
+func NewTunnelsPage(parent walk.Container) (*TunnelsPage, error) {
 	var err error
 	var disposables walk.Disposables
 	defer disposables.Treat()
 
 	tp := new(TunnelsPage)
-	if tp.TabPage, err = walk.NewTabPage(); err != nil {
+	if tp.Composite, err = walk.NewComposite(parent); err != nil {
 		return nil, err
 	}
 	disposables.Add(tp)
 
-	tp.SetTitle(l18n.Sprintf("Tunnels"))
 	tp.SetLayout(walk.NewHBoxLayout())
 	applyDarkSurface(tp, uiCanvasBrush)
 
@@ -59,21 +59,16 @@ func NewTunnelsPage() (*TunnelsPage, error) {
 	applyDarkSurface(tp.listContainer.(*walk.Composite), uiRailBrush)
 	tp.listContainer.SetMinMaxSize(walk.Size{250, 0}, walk.Size{250, 0})
 
-	railTitle, err := walk.NewLabel(tp.listContainer)
-	if err != nil {
-		return nil, err
-	}
-	railTitle.SetText(l18n.Sprintf("Connections"))
-	railTitle.SetTextColor(uiTextColor)
-	railTitleFont, fontErr := walk.NewFont("Segoe UI Semibold", 14, 0)
-	if fontErr == nil {
-		railTitle.SetFont(railTitleFont)
-		disposables.Add(railTitleFont)
-	}
-
 	if tp.listView, err = NewListView(tp.listContainer); err != nil {
 		return nil, err
 	}
+	// The legacy model remains the action and shortcut bridge. It is never
+	// visible; ConnectionRail is the complete owner-drawn presentation.
+	tp.listView.SetVisible(false)
+	if tp.rail, err = NewConnectionRail(tp.listContainer); err != nil {
+		return nil, err
+	}
+	tp.rail.SetSelectionHandler(tp.listView.selectTunnel)
 	if err := tp.createRailActions(&disposables); err != nil {
 		return nil, err
 	}
@@ -133,7 +128,12 @@ func NewTunnelsPage() (*TunnelsPage, error) {
 	tp.listView.ItemCountChanged().Attach(tp.onTunnelsChanged)
 	tp.listView.SelectedIndexesChanged().Attach(tp.onSelectedTunnelsChanged)
 	tp.listView.ItemActivated().Attach(tp.onTunnelsViewItemActivated)
-	tp.listView.CurrentIndexChanged().Attach(tp.updateConfView)
+	tp.listView.CurrentIndexChanged().Attach(func() {
+		tp.updateConfView()
+		if tunnel := tp.listView.CurrentTunnel(); tunnel != nil {
+			tp.rail.Select(tunnel.Name)
+		}
+	})
 	tp.listView.Load(false)
 	tp.onTunnelsChanged()
 
@@ -152,25 +152,21 @@ func (tp *TunnelsPage) createRailActions(disposables *walk.Disposables) error {
 	applyDarkSurface(actions, uiRailBrush)
 	actions.SetVisible(IsAdmin)
 
-	newButton := func(text string, handler func()) (*walk.PushButton, error) {
-		button, buttonErr := walk.NewPushButton(actions)
+	newButton := func(text string, primary bool, handler func()) (*darkButton, error) {
+		dark, buttonErr := newDarkButton(actions, l18n.Sprintf(text), primary)
 		if buttonErr != nil {
 			return nil, buttonErr
 		}
-		button.SetText(l18n.Sprintf(text))
-		button.SetBackground(uiCardBrush)
-		button.Clicked().Attach(handler)
-		return button, nil
+		dark.Clicked().Attach(handler)
+		return dark, nil
 	}
-	add, err := newButton("Add Tunnel", tp.onAddTunnel)
-	if err != nil {
+	if _, err := newButton("+ Add Tunnel", true, tp.onAddTunnel); err != nil {
 		return err
 	}
-	add.SetBackground(uiAccentBrush)
-	if _, err = newButton("Import Tunnel(s)", tp.onImport); err != nil {
+	if _, err = newButton("Import Tunnel(s)", false, tp.onImport); err != nil {
 		return err
 	}
-	deleteButton, err := newButton("Delete", tp.onDelete)
+	deleteButton, err := newButton("Delete", false, tp.onDelete)
 	if err != nil {
 		return err
 	}
@@ -655,20 +651,13 @@ func (tp *TunnelsPage) swapFiller(enabled bool) bool {
 }
 
 func (tp *TunnelsPage) onTunnelsChanged() {
-	if tp.swapFiller(tp.listView.model.RowCount() == 0) {
-		tp.fillerButton.SetText(l18n.Sprintf("Import Tunnel(s) From File"))
-		tp.fillerHandler = tp.onImport
+	tp.rail.Load()
+	if tp.listView.model.RowCount() == 0 {
+		tp.confView.SetTunnel(nil)
 	}
 }
 
 func (tp *TunnelsPage) onSelectedTunnelsChanged() {
-	if tp.listView.model.RowCount() == 0 {
-		return
-	}
-	indices := tp.listView.SelectedIndexes()
-	tunnelCount := len(indices)
-	if tp.swapFiller(tunnelCount > 1) {
-		tp.fillerButton.SetText(l18n.Sprintf("Delete %d tunnels", tunnelCount))
-		tp.fillerHandler = tp.onDelete
-	}
+	// Selection continues to drive the existing delete/edit handlers. The
+	// selected dashboard remains visible even for multi-selection.
 }

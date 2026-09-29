@@ -18,14 +18,14 @@ import (
 )
 
 type SettingsPage struct {
-	*walk.TabPage
+	*walk.Composite
 	settings bootstrap.Settings
 	model    *bootstrapSettingsModel
 	list     *walk.ListBox
 	status   *walk.TextLabel
 }
 
-func NewSettingsPage() (*SettingsPage, error) {
+func NewSettingsPage(parent walk.Container) (*SettingsPage, error) {
 	page := &SettingsPage{}
 	var err error
 	page.settings, err = manager.IPCClientBootstrapSettings()
@@ -35,11 +35,10 @@ func NewSettingsPage() (*SettingsPage, error) {
 
 	var disposables walk.Disposables
 	defer disposables.Treat()
-	if page.TabPage, err = walk.NewTabPage(); err != nil {
+	if page.Composite, err = walk.NewComposite(parent); err != nil {
 		return nil, err
 	}
 	disposables.Add(page)
-	page.SetTitle(l18n.Sprintf("Settings"))
 	layout := walk.NewVBoxLayout()
 	layout.SetMargins(walk.Margins{18, 18, 18, 18})
 	layout.SetSpacing(10)
