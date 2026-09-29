@@ -74,6 +74,9 @@ func NewTunnelsPage() (*TunnelsPage, error) {
 	if tp.listView, err = NewListView(tp.listContainer); err != nil {
 		return nil, err
 	}
+	if err := tp.createRailActions(&disposables); err != nil {
+		return nil, err
+	}
 
 	if tp.currentTunnelContainer, err = walk.NewComposite(tp); err != nil {
 		return nil, err
@@ -137,6 +140,46 @@ func NewTunnelsPage() (*TunnelsPage, error) {
 	return tp, nil
 }
 
+func (tp *TunnelsPage) createRailActions(disposables *walk.Disposables) error {
+	actions, err := walk.NewComposite(tp.listContainer)
+	if err != nil {
+		return err
+	}
+	layout := walk.NewVBoxLayout()
+	layout.SetMargins(walk.Margins{10, 10, 10, 10})
+	layout.SetSpacing(6)
+	actions.SetLayout(layout)
+	applyDarkSurface(actions, uiRailBrush)
+	actions.SetVisible(IsAdmin)
+
+	newButton := func(text string, handler func()) (*walk.PushButton, error) {
+		button, buttonErr := walk.NewPushButton(actions)
+		if buttonErr != nil {
+			return nil, buttonErr
+		}
+		button.SetText(l18n.Sprintf(text))
+		button.SetBackground(uiCardBrush)
+		button.Clicked().Attach(handler)
+		return button, nil
+	}
+	add, err := newButton("Add Tunnel", tp.onAddTunnel)
+	if err != nil {
+		return err
+	}
+	add.SetBackground(uiAccentBrush)
+	if _, err = newButton("Import Tunnel(s)", tp.onImport); err != nil {
+		return err
+	}
+	deleteButton, err := newButton("Delete", tp.onDelete)
+	if err != nil {
+		return err
+	}
+	updateDelete := func() { deleteButton.SetEnabled(len(tp.listView.SelectedIndexes()) > 0) }
+	tp.listView.SelectedIndexesChanged().Attach(updateDelete)
+	updateDelete()
+	return nil
+}
+
 func (tp *TunnelsPage) CreateToolbar() error {
 	if tp.listToolbar != nil {
 		return nil
@@ -153,6 +196,10 @@ func (tp *TunnelsPage) CreateToolbar() error {
 	hlayout.SetMargins(walk.Margins{})
 	toolBarContainer.SetLayout(hlayout)
 	toolBarContainer.SetVisible(IsAdmin)
+	// The rail buttons above are the visible primary actions. Keep this toolbar
+	// available for keyboard shortcuts and context-menu wiring without retaining
+	// the stock WireGuard-style toolbar in the presentation.
+	toolBarContainer.SetVisible(false)
 
 	if tp.listToolbar, err = walk.NewToolBarWithOrientationAndButtonStyle(toolBarContainer, walk.Horizontal, walk.ToolBarButtonImageBeforeText); err != nil {
 		return err

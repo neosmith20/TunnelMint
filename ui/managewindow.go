@@ -22,12 +22,18 @@ type ManageTunnelsWindow struct {
 	walk.FormBase
 
 	tabs         *walk.TabWidget
+	header       *productHeader
 	tunnelsPage  *TunnelsPage
 	logPage      *LogPage
 	settingsPage *SettingsPage
 	updatePage   *UpdatePage
 
 	tunnelChangedCB *manager.TunnelChangeCallback
+}
+
+type productHeader struct {
+	logButton      *walk.PushButton
+	settingsButton *walk.PushButton
 }
 
 const (
@@ -81,7 +87,7 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 	vlayout.SetMargins(walk.Margins{5, 5, 5, 5})
 	vlayout.SetSpacing(0)
 	mtw.SetLayout(vlayout)
-	if err = addProductHeader(mtw, &disposables); err != nil {
+	if mtw.header, err = addProductHeader(mtw, &disposables); err != nil {
 		return nil, err
 	}
 	mtw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
@@ -113,6 +119,14 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 		return nil, err
 	}
 	mtw.tabs.Pages().Add(mtw.settingsPage.TabPage)
+	applyDarkWindow(mtw.tabs.Handle())
+	mtw.tabs.SetBackground(uiCanvasBrush)
+	mtw.header.logButton.Clicked().Attach(func() {
+		mtw.tabs.SetCurrentIndex(mtw.tabs.Pages().Index(mtw.logPage.TabPage))
+	})
+	mtw.header.settingsButton.Clicked().Attach(func() {
+		mtw.tabs.SetCurrentIndex(mtw.tabs.Pages().Index(mtw.settingsPage.TabPage))
+	})
 
 	mtw.VisibleChanged().Attach(func() {
 		if mtw.Visible() {
@@ -148,10 +162,11 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 	return mtw, nil
 }
 
-func addProductHeader(parent walk.Container, disposables *walk.Disposables) error {
+func addProductHeader(parent walk.Container, disposables *walk.Disposables) (*productHeader, error) {
+	productHeader := new(productHeader)
 	header, err := walk.NewComposite(parent)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	headerLayout := walk.NewHBoxLayout()
 	headerLayout.SetMargins(walk.Margins{14, 12, 14, 10})
@@ -163,18 +178,18 @@ func addProductHeader(parent walk.Container, disposables *walk.Disposables) erro
 	if err == nil {
 		imageView, imageErr := walk.NewImageView(header)
 		if imageErr != nil {
-			return imageErr
+			return nil, imageErr
 		}
 		imageView.SetMode(walk.ImageViewModeCenter)
 		imageView.SetMinMaxSize(walk.Size{40, 40}, walk.Size{40, 40})
 		if err := imageView.SetImage(icon); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	labels, err := walk.NewComposite(header)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	labelsLayout := walk.NewVBoxLayout()
 	labelsLayout.SetMargins(walk.Margins{10, 0, 0, 0})
@@ -182,7 +197,7 @@ func addProductHeader(parent walk.Container, disposables *walk.Disposables) erro
 	labels.SetLayout(labelsLayout)
 	title, err := walk.NewLabel(labels)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	title.SetText(l18n.Sprintf("WireHush"))
 	title.SetTextColor(uiTextColor)
@@ -193,23 +208,34 @@ func addProductHeader(parent walk.Container, disposables *walk.Disposables) erro
 	}
 	subtitle, err := walk.NewLabel(labels)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	subtitle.SetText(l18n.Sprintf("Private network control"))
 	applyMutedText(subtitle)
+	walk.NewHSpacer(header)
+	if productHeader.logButton, err = walk.NewPushButton(header); err != nil {
+		return nil, err
+	}
+	productHeader.logButton.SetText(l18n.Sprintf("Log"))
+	productHeader.logButton.SetBackground(uiHeaderBrush)
+	if productHeader.settingsButton, err = walk.NewPushButton(header); err != nil {
+		return nil, err
+	}
+	productHeader.settingsButton.SetText(l18n.Sprintf("Settings"))
+	productHeader.settingsButton.SetBackground(uiHeaderBrush)
 
 	accent, err := walk.NewComposite(parent)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	accent.SetMinMaxSize(walk.Size{0, 3}, walk.Size{0, 3})
 	brush, err := walk.NewSolidColorBrush(walk.RGB(23, 195, 210))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	accent.SetBackground(brush)
 	disposables.Add(brush)
-	return nil
+	return productHeader, nil
 }
 
 func (mtw *ManageTunnelsWindow) Dispose() {

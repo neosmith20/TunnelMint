@@ -118,6 +118,8 @@ func (tv *ListView) CurrentTunnel() *manager.Tunnel {
 var dummyBitmap *walk.Bitmap
 
 func (tv *ListView) StyleCell(style *walk.CellStyle) {
+	style.BackgroundColor = walk.RGB(12, 24, 34)
+	style.TextColor = uiTextColor
 	row := style.Row()
 	if row < 0 || row >= len(tv.model.tunnels) {
 		return
