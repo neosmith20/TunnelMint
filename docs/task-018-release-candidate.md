@@ -8,6 +8,7 @@ This document records the final short release-candidate gate. It does not replac
 - [x] Built `wirehush.exe /update` exited normally and reported only that WireHush updates are disabled.
 - [x] Focused bootstrap, DNS, DoH, product, tunnel, firewall, manager, UI, and configuration-parser tests passed.
 - [x] Current-main amd64 MSI linked as `wirehush-amd64-0.1.0.msi`.
+- [x] GitHub `focused-tests-and-build` passed for release-candidate commit `35a68f23a7a6599b5ac952b0486b5c87cf75cbd8` in PR #15. CodeQL language analyses also passed.
 - [x] Package inspection found `LICENSE`, `WIREGUARD-COPYING`, `GPL-2.0.txt`, and `THIRD_PARTY_NOTICES.md`.
 - [x] Active-product branding audit found `TunnelMint` only in documented compatibility identifiers, the transitional repository URL, and Task 014 test-result locations.
 - [x] Project-owned required notice uses WireHush; WireGuard and GPL attribution remain packaged.
