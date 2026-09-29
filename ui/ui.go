@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/lxn/walk"
-	"github.com/lxn/win"
 	"golang.org/x/sys/windows"
 
 	"golang.zx2c4.com/wireguard/windows/l18n"
@@ -92,7 +91,12 @@ func RunUI() {
 	}()
 
 	if tray == nil {
-		win.ShowWindow(mtw.Handle(), win.SW_SHOW)
+		// Use Walk's form lifecycle rather than a raw ShowWindow call. Show
+		// restores persistent bounds and publishes visibility to the layout;
+		// calling the raw API before Run left the completed form invisible on
+		// this VM.
+		mtw.Show()
+		raise(mtw.Handle())
 	}
 
 	mtw.Run()
