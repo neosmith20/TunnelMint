@@ -1,0 +1,339 @@
+<Window
+    x:Class="WireHush.UI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <!--
+        VISUAL REFERENCE SHELL ONLY.
+        Values on this page intentionally mirror the owner-approved mockup so
+        the WinUI composition can be reviewed before manager IPC is connected.
+        Production data binding replaces the sample values; the geometry and
+        hierarchy are the contract.
+    -->
+
+    <Grid x:Name="RootGrid"
+          Background="{StaticResource WireHushCanvasBrush}"
+          RequestedTheme="Dark">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="108" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Integrated header / title area -->
+        <Border x:Name="TitleBarRoot"
+                Grid.Row="0"
+                Background="{StaticResource WireHushHeaderBrush}"
+                BorderBrush="#1A232A"
+                BorderThickness="0,0,0,1">
+            <Grid x:Name="TitleBarDragRegion" Padding="32,12,20,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="18">
+                    <Grid Width="110" Height="76">
+                        <Image Width="96" Height="72" Stretch="Uniform" Source="Assets/WireHush_Icon.png" />
+                    </Grid>
+                    <StackPanel VerticalAlignment="Center" Spacing="0">
+                        <TextBlock Text="WireHush"
+                                   Foreground="{StaticResource WireHushTextBrush}"
+                                   FontFamily="Segoe UI Variable Display"
+                                   FontSize="40"
+                                   FontWeight="SemiBold"
+                                   LineHeight="44" />
+                        <TextBlock Text="Private network control"
+                                   Foreground="{StaticResource WireHushTextBrush}"
+                                   FontFamily="Segoe UI Variable Text"
+                                   FontSize="18"
+                                   Opacity="0.92" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel x:Name="HeaderCommands"
+                            Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
+                            Spacing="12">
+                    <Button Style="{StaticResource WireHushHeaderCommandStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="9">
+                            <FontIcon Glyph="&#xE713;" FontSize="24" />
+                            <TextBlock Text="Settings" FontSize="17" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource WireHushHeaderCommandStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="9">
+                            <FontIcon Glyph="&#xE8A5;" FontSize="24" />
+                            <TextBlock Text="Log" FontSize="17" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource WireHushHeaderCommandStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="9">
+                            <FontIcon Glyph="&#xE897;" FontSize="24" />
+                            <TextBlock Text="Help" FontSize="17" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Shell body -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="342" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Connections rail -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource WireHushRailBrush}"
+                    BorderBrush="#1A232A"
+                    BorderThickness="0,0,1,0">
+                <Grid Padding="20,20,20,28">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Connections"
+                               Foreground="{StaticResource WireHushTextBrush}"
+                               FontSize="27"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,16" />
+
+                    <AutoSuggestBox Grid.Row="1"
+                                    Height="48"
+                                    PlaceholderText="Search tunnels..."
+                                    QueryIcon="Find"
+                                    FontSize="16"
+                                    Margin="0,0,0,14" />
+
+                    <StackPanel Grid.Row="2" Spacing="6">
+                        <Border Background="{StaticResource WireHushSelectedBrush}"
+                                BorderBrush="#067EA9"
+                                BorderThickness="1"
+                                CornerRadius="7"
+                                Height="76">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="4" />
+                                    <ColumnDefinition Width="44" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="38" />
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Background="{StaticResource WireHushCyanBrush}" CornerRadius="7,0,0,7" />
+                                <Ellipse Grid.Column="1" Width="18" Height="18" Fill="{StaticResource WireHushGreenBrush}" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="Home" Foreground="{StaticResource WireHushTextBrush}" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Connected" Foreground="#DDEAF2" FontSize="17" />
+                                </StackPanel>
+                                <Button Grid.Column="3" Background="Transparent" BorderThickness="0" Padding="0" Width="34" Height="44" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE712;" Foreground="#B7C9D8" FontSize="22" />
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <Grid Height="76" Padding="12,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="38" />
+                            </Grid.ColumnDefinitions>
+                            <Ellipse Grid.Column="0" Width="18" Height="18" Fill="#8296A8" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Text="Work" Foreground="{StaticResource WireHushTextBrush}" FontSize="20" FontWeight="SemiBold" />
+                                <TextBlock Text="Disconnected" Foreground="#C4CFD8" FontSize="17" />
+                            </StackPanel>
+                            <FontIcon Grid.Column="2" Glyph="&#xE712;" Foreground="#AABCCC" FontSize="22" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Grid>
+
+                        <Grid Height="76" Padding="12,0,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="*"/><ColumnDefinition Width="38"/></Grid.ColumnDefinitions>
+                            <Ellipse Grid.Column="0" Width="18" Height="18" Fill="#8296A8" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2"><TextBlock Text="Travel" Foreground="{StaticResource WireHushTextBrush}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Disconnected" Foreground="#C4CFD8" FontSize="17"/></StackPanel>
+                            <FontIcon Grid.Column="2" Glyph="&#xE712;" Foreground="#AABCCC" FontSize="22" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Grid>
+
+                        <Grid Height="76" Padding="12,0,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="*"/><ColumnDefinition Width="38"/></Grid.ColumnDefinitions>
+                            <Ellipse Grid.Column="0" Width="18" Height="18" Fill="#8296A8" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2"><TextBlock Text="Lab" Foreground="{StaticResource WireHushTextBrush}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Disconnected" Foreground="#C4CFD8" FontSize="17"/></StackPanel>
+                            <FontIcon Grid.Column="2" Glyph="&#xE712;" Foreground="#AABCCC" FontSize="22" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Grid>
+
+                        <Grid Height="76" Padding="12,0,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="*"/><ColumnDefinition Width="38"/></Grid.ColumnDefinitions>
+                            <Ellipse Grid.Column="0" Width="18" Height="18" Fill="#8296A8" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2"><TextBlock Text="Backup" Foreground="{StaticResource WireHushTextBrush}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Disconnected" Foreground="#C4CFD8" FontSize="17"/></StackPanel>
+                            <FontIcon Grid.Column="2" Glyph="&#xE712;" Foreground="#AABCCC" FontSize="22" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Grid>
+
+                        <Grid Height="76" Padding="12,0,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="*"/><ColumnDefinition Width="38"/></Grid.ColumnDefinitions>
+                            <Ellipse Grid.Column="0" Width="18" Height="18" Fill="#8296A8" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2"><TextBlock Text="Mobile" Foreground="{StaticResource WireHushTextBrush}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Disconnected" Foreground="#C4CFD8" FontSize="17"/></StackPanel>
+                            <FontIcon Grid.Column="2" Glyph="&#xE712;" Foreground="#AABCCC" FontSize="22" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Spacing="12">
+                        <Button Style="{StaticResource WireHushPrimaryButtonStyle}" HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center"><FontIcon Glyph="&#xE710;" FontSize="22"/><TextBlock Text="Add Tunnel" VerticalAlignment="Center"/></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource WireHushSecondaryButtonStyle}" HorizontalAlignment="Stretch">
+                            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center"><FontIcon Glyph="&#xE8A5;" FontSize="20"/><TextBlock Text="Import Tunnel(s)" VerticalAlignment="Center"/></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource WireHushSecondaryButtonStyle}" HorizontalAlignment="Stretch" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center"><FontIcon Glyph="&#xE74D;" FontSize="20"/><TextBlock Text="Delete" VerticalAlignment="Center"/></StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main content -->
+            <ScrollViewer Grid.Column="1"
+                          Background="{StaticResource WireHushCanvasBrush}"
+                          HorizontalScrollMode="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel Padding="16,15,16,24" Spacing="14">
+
+                    <!-- Selected connection summary -->
+                    <Border Style="{StaticResource WireHushCardStyle}" Padding="18,18,14,16">
+                        <StackPanel Spacing="18">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="8">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <TextBlock Text="Home" Foreground="{StaticResource WireHushTextBrush}" FontSize="32" FontWeight="SemiBold"/>
+                                        <FontIcon Glyph="&#xE70F;" Foreground="#AFC3D3" FontSize="22" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="14">
+                                        <Ellipse Width="16" Height="16" Fill="{StaticResource WireHushGreenBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Connected" Foreground="{StaticResource WireHushGreenBrush}" FontSize="18" FontWeight="SemiBold"/>
+                                        <Border Width="1" Height="22" Background="#50606C" Margin="8,0"/>
+                                        <TextBlock Text="Connected for 1h 24m" Foreground="#C4D0DA" FontSize="18"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Button Grid.Column="1" Width="255" Height="68" Style="{StaticResource WireHushSecondaryButtonStyle}" HorizontalAlignment="Right">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center"><FontIcon Glyph="&#xE7E8;" Foreground="#2C91FF" FontSize="28"/><TextBlock Text="Disconnect" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Style="{StaticResource WireHushCardStyle}" Padding="12" MinHeight="88">
+                                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="54" Height="54" CornerRadius="8" Background="#0B2736"><FontIcon Glyph="&#xE774;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5"><TextBlock Text="VPN IP (IPv4)" Foreground="#C2CFD9" FontSize="15"/><TextBlock Text="10.0.0.2" Foreground="{StaticResource WireHushTextBrush}" FontSize="18" FontWeight="SemiBold"/></StackPanel></Grid>
+                                </Border>
+                                <Border Grid.Column="1" Style="{StaticResource WireHushCardStyle}" Padding="12" MinHeight="88">
+                                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="54" Height="54" CornerRadius="8" Background="#0B2736"><FontIcon Glyph="&#xE774;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5"><TextBlock Text="VPN IP (IPv6)" Foreground="#C2CFD9" FontSize="15"/><TextBlock Text="fd7a:115c:a1e0::2" Foreground="{StaticResource WireHushTextBrush}" FontSize="17" FontWeight="SemiBold"/></StackPanel></Grid>
+                                </Border>
+                                <Border Grid.Column="2" Style="{StaticResource WireHushCardStyle}" Padding="12" MinHeight="88">
+                                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="54" Height="54" CornerRadius="8" Background="#0B2736"><FontIcon Glyph="&#xE968;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5"><TextBlock Text="Endpoint" Foreground="#C2CFD9" FontSize="15"/><TextBlock Text="vpn.example.com:51820" Foreground="{StaticResource WireHushTextBrush}" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/></StackPanel></Grid>
+                                </Border>
+                                <Border Grid.Column="3" Style="{StaticResource WireHushCardStyle}" Padding="12" MinHeight="88">
+                                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="54" Height="54" CornerRadius="8" Background="#0B2736"><FontIcon Glyph="&#xE823;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5"><TextBlock Text="Latest Handshake" Foreground="#C2CFD9" FontSize="15"/><TextBlock Text="22 seconds ago" Foreground="{StaticResource WireHushTextBrush}" FontSize="16" FontWeight="SemiBold"/></StackPanel></Grid>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Section navigation -->
+                    <Grid Height="58" BorderBrush="#26343E" BorderThickness="0,0,0,1">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="182"/><ColumnDefinition Width="178"/><ColumnDefinition Width="160"/><ColumnDefinition Width="145"/><ColumnDefinition Width="190"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0"><StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9"><FontIcon Glyph="&#xE83D;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="22"/><TextBlock Text="Overview" Foreground="{StaticResource WireHushCyanBrush}" FontSize="18"/></StackPanel><Border Height="3" Background="{StaticResource WireHushCyanBrush}" VerticalAlignment="Bottom"/></Grid>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9"><FontIcon Glyph="&#xE968;" Foreground="#AFC0CF" FontSize="22"/><TextBlock Text="Network" Foreground="#B8C4CE" FontSize="18"/></StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9"><FontIcon Glyph="&#xEA18;" Foreground="#AFC0CF" FontSize="22"/><TextBlock Text="DNS" Foreground="#B8C4CE" FontSize="18"/></StackPanel>
+                        <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9"><FontIcon Glyph="&#xE77B;" Foreground="#AFC0CF" FontSize="22"/><TextBlock Text="Peer" Foreground="#B8C4CE" FontSize="18"/></StackPanel>
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="9"><FontIcon Glyph="&#xEA37;" Foreground="#AFC0CF" FontSize="22"/><TextBlock Text="Allowed IPs" Foreground="#B8C4CE" FontSize="18"/></StackPanel>
+                    </Grid>
+
+                    <!-- Overview upper cards -->
+                    <Grid ColumnSpacing="14">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="1.12*"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource WireHushCardStyle}" Padding="22,16" MinHeight="310">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon Glyph="&#xE83D;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="24"/><TextBlock Text="Connection" Foreground="{StaticResource WireHushTextBrush}" FontSize="21" FontWeight="SemiBold"/></StackPanel>
+                                <Rectangle Height="1" Fill="#1E2A33" />
+                                <Grid ColumnSpacing="18"><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Status" Foreground="#D6E0E7" FontSize="17"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12"><Ellipse Width="14" Height="14" Fill="{StaticResource WireHushGreenBrush}" VerticalAlignment="Center"/><TextBlock Text="Connected" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></StackPanel></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33" />
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Tunnel Name" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="Home" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33" />
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions><TextBlock Text="Configuration File" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="C:\Program Files\WireHush\tunnels\home.conf" Foreground="{StaticResource WireHushTextBrush}" FontSize="16" TextTrimming="CharacterEllipsis"/><Button Grid.Column="2" Width="36" Height="36" Background="#111D26" BorderBrush="#385067" BorderThickness="1" CornerRadius="6" Padding="0"><FontIcon Glyph="&#xE8C8;" FontSize="17"/></Button></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33" />
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Interface" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="wirehush0" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33" />
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Uptime" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="1h 24m 16s" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Style="{StaticResource WireHushCardStyle}" Padding="18,14" MinHeight="310">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Grid Grid.Row="0"><StackPanel Orientation="Horizontal" Spacing="10"><FontIcon Glyph="&#xE9D9;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="24"/><TextBlock Text="Traffic" Foreground="{StaticResource WireHushTextBrush}" FontSize="21" FontWeight="SemiBold"/></StackPanel><Border HorizontalAlignment="Right" BorderBrush="#385067" BorderThickness="1" CornerRadius="6" Padding="14,8"><TextBlock Text="Last 5 minutes" Foreground="#DCE6ED" FontSize="15"/></Border></Grid>
+
+                                <Grid Grid.Row="1" Margin="0,16,0,8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="74"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="1">
+                                        <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                                        <Rectangle Grid.Row="0" Height="1" Fill="#253540" VerticalAlignment="Top"/><Rectangle Grid.Row="1" Height="1" Fill="#253540" VerticalAlignment="Top"/><Rectangle Grid.Row="2" Height="1" Fill="#253540" VerticalAlignment="Bottom"/>
+                                        <Canvas x:Name="TrafficCanvas" Clip="{x:Null}">
+                                            <Polyline Stroke="#03A9F4" StrokeThickness="2.2" Points="0,90 25,84 50,78 75,80 100,68 125,74 150,67 175,72 200,76 225,44 250,28 275,58 300,62 325,88 350,90 375,64 400,72 425,58 450,62 475,50 500,28 525,70 550,76 575,52 600,84" />
+                                            <Polyline Stroke="#28DD55" StrokeThickness="2" Points="0,100 25,96 50,101 75,92 100,100 125,103 150,98 175,91 200,102 225,97 250,102 275,104 300,106 325,101 350,104 375,98 400,102 425,105 450,97 475,104 500,106 525,101 550,104 575,103 600,106" />
+                                        </Canvas>
+                                    </Grid>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" Spacing="43"><TextBlock Text="10 Mbps" Foreground="#9FB1BE" FontSize="14"/><TextBlock Text="5 Mbps" Foreground="#9FB1BE" FontSize="14"/><TextBlock Text="0 Mbps" Foreground="#9FB1BE" FontSize="14"/></StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="2" ColumnSpacing="16"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions><StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" HorizontalAlignment="Center"><FontIcon Glyph="&#xE896;" Foreground="#22B9F5" FontSize="32"/><StackPanel><TextBlock Text="Download" Foreground="#B6C6D2" FontSize="14"/><TextBlock Text="42.7 Mbps" Foreground="{StaticResource WireHushTextBrush}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="3.12 GB" Foreground="#B6C6D2" FontSize="15"/></StackPanel></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14" HorizontalAlignment="Center"><FontIcon Glyph="&#xE898;" Foreground="{StaticResource WireHushGreenBrush}" FontSize="32"/><StackPanel><TextBlock Text="Upload" Foreground="#B6C6D2" FontSize="14"/><TextBlock Text="6.8 Mbps" Foreground="{StaticResource WireHushTextBrush}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="512 MB" Foreground="#B6C6D2" FontSize="15"/></StackPanel></StackPanel></Grid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Overview lower cards -->
+                    <Grid ColumnSpacing="14">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="1.12*"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource WireHushCardStyle}" Padding="22,16" MinHeight="247">
+                            <StackPanel Spacing="11">
+                                <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon Glyph="&#xEA18;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="25"/><TextBlock Text="DNS (Encrypted)" Foreground="{StaticResource WireHushTextBrush}" FontSize="21" FontWeight="SemiBold"/><Ellipse Width="14" Height="14" Fill="{StaticResource WireHushGreenBrush}" Margin="12,0,0,0" VerticalAlignment="Center"/><TextBlock Text="Using DNS over HTTPS (DoH)" Foreground="#D8E3EA" FontSize="16" VerticalAlignment="Center"/></StackPanel>
+                                <Rectangle Height="1" Fill="#1E2A33"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Server" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="https://dns.mylan.network/dns-query" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Address Family" Foreground="#D6E0E7" FontSize="17"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="9"><FontIcon Glyph="&#xE968;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="18"/><TextBlock Text="IPv4 (via VPN)" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></StackPanel></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions><TextBlock Text="Bootstrap" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="1.1.1.1 / 1.0.0.1 (IPv4)" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/><Button Grid.Column="2" Width="38" Height="38" Background="#111D26" BorderBrush="#385067" BorderThickness="1" CornerRadius="6" Padding="0"><FontIcon Glyph="&#xE713;" FontSize="18"/></Button></Grid>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="185"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Fallback" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="Disabled" Foreground="#C7D4DE" FontSize="17"/></Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Style="{StaticResource WireHushCardStyle}" Padding="18,16" MinHeight="247">
+                            <StackPanel Spacing="11">
+                                <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon Glyph="&#xE77B;" Foreground="{StaticResource WireHushCyanBrush}" FontSize="24"/><TextBlock Text="Peer" Foreground="{StaticResource WireHushTextBrush}" FontSize="21" FontWeight="SemiBold"/></StackPanel>
+                                <Rectangle Height="1" Fill="#1E2A33"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions><TextBlock Text="Public Key" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="p8zG...7sQ=" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/><Button Grid.Column="2" Width="36" Height="36" Background="#111D26" BorderBrush="#385067" BorderThickness="1" CornerRadius="6" Padding="0"><FontIcon Glyph="&#xE8C8;" FontSize="17"/></Button></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Endpoint" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="vpn.example.com:51820" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Allowed IPs" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="0.0.0.0/0, ::/0" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></Grid>
+                                <Rectangle Height="1" Fill="#1E2A33"/>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Persistent Keepalive" Foreground="#D6E0E7" FontSize="17"/><TextBlock Grid.Column="1" Text="25 seconds" Foreground="{StaticResource WireHushTextBrush}" FontSize="17"/></Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>
