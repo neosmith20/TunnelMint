@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  *
- * Copyright (C) 2026 TunnelMint contributors. All Rights Reserved.
+ * Copyright (C) 2026 WireHush contributors. All Rights Reserved.
  */
 
 package bootstrap
@@ -157,7 +157,7 @@ func (s *Settings) RestoreDefaults() {
 	*s = DefaultSettings()
 }
 
-// Load reads settings from a TunnelMint-owned path. Missing settings use the
+// Load reads settings from a WireHush-owned path. Missing settings use the
 // built-in defaults without creating a file until the user changes them.
 func Load(path string) (Settings, error) {
 	data, err := os.ReadFile(path)
@@ -186,7 +186,7 @@ func Load(path string) (Settings, error) {
 }
 
 // Save writes settings atomically with a private file mode. The parent path is
-// created by the TunnelMint data-root setup before this function is called.
+// created by the WireHush data-root setup before this function is called.
 func (s Settings) Save(path string) error {
 	if err := s.Validate(); err != nil {
 		return err

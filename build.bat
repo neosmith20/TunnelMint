@@ -28,7 +28,7 @@ if exist .deps\prepared goto :render
 :render
 	echo [+] Rendering icons
 	for %%a in ("ui\icon\*.svg") do convert -background none "%%~fa" -define icon:auto-resize="256,192,128,96,64,48,40,32,24,20,16" -compress zip "%%~dpna.ico" || goto :error
-	convert "ui\icon\wirehush.png" -define icon:auto-resize="256,192,128,96,64,48,40,32,24,20,16" -compress zip "ui\icon\tunnelmint.ico" || goto :error
+	convert "ui\icon\wirehush.png" -define icon:auto-resize="256,192,128,96,64,48,40,32,24,20,16" -compress zip "ui\icon\wirehush.ico" || goto :error
 
 :build
 	for /f "tokens=3" %%a in ('findstr /r "Number.*=.*[0-9.]*" .\version\version.go') do set WIREGUARD_VERSION=%%a
@@ -51,10 +51,10 @@ if exist .deps\prepared goto :render
 	if "%SigningProvider%"=="" goto :success
 	if "%TimestampServer%"=="" goto :success
 	echo [+] Signing
-	signtool sign %SigningProvider% /fd sha256 /tr "%TimestampServer%" /td sha256 /d TunnelMint x86\tunnelmint.exe x86\wg.exe amd64\tunnelmint.exe amd64\wg.exe arm64\tunnelmint.exe arm64\wg.exe || goto :error
+	signtool sign %SigningProvider% /fd sha256 /tr "%TimestampServer%" /td sha256 /d WireHush x86\wirehush.exe x86\wg.exe amd64\wirehush.exe amd64\wg.exe arm64\wirehush.exe arm64\wg.exe || goto :error
 
 :success
-	echo [+] Success. Launch tunnelmint.exe.
+	echo [+] Success. Launch WireHush (wirehush.exe).
 	exit /b 0
 
 :download
@@ -74,7 +74,7 @@ if exist .deps\prepared goto :render
 	echo [+] Assembling resources %1
 	%~2-w64-mingw32-windres -I ".deps\wireguard-nt\bin\%~1" -DWIREGUARD_VERSION_ARRAY=%WIREGUARD_VERSION_ARRAY% -DWIREGUARD_VERSION_STR=%WIREGUARD_VERSION% -i resources.rc -o "resources_%~3.syso" -O coff -c 65001 || exit /b %errorlevel%
 	echo [+] Building program %1
-	go build -overlay .overlay/overlay.json -tags load_wgnt_from_rsrc -ldflags="-H windowsgui -s -w" -trimpath -buildvcs=false -v -o "%~1\tunnelmint.exe" || exit /b 1
+	go build -overlay .overlay/overlay.json -tags load_wgnt_from_rsrc -ldflags="-H windowsgui -s -w" -trimpath -buildvcs=false -v -o "%~1\wirehush.exe" || exit /b 1
 	if not exist "%~1\wg.exe" (
 		echo [+] Building command line tools %1
 		del .deps\src\*.exe .deps\src\*.o .deps\src\wincompat\*.o .deps\src\wincompat\*.lib 2> NUL

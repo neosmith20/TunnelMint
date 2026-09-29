@@ -1,12 +1,12 @@
 # Privacy
 
-TunnelMint is designed to operate without requiring an account and without unnecessary collection of user data.
+WireHush is designed to operate without requiring an account and without unnecessary collection of user data.
 
 ## Current Development Policy
 
-TunnelMint does not intentionally collect or transmit analytics, advertising identifiers, browsing history, DNS query history, tunnel configuration contents, private keys, credentials, or other user traffic data.
+WireHush does not intentionally collect or transmit analytics, advertising identifiers, browsing history, DNS query history, tunnel configuration contents, private keys, credentials, or other user traffic data.
 
-TunnelMint may process network and tunnel information locally on the user's device as required to establish and operate VPN tunnels, DNS resolution, diagnostics, and settings.
+WireHush may process network and tunnel information locally on the user's device as required to establish and operate VPN tunnels, DNS resolution, diagnostics, and settings.
 
 ## Future Features
 
@@ -16,7 +16,7 @@ Any optional data collection should be clearly disclosed and should not be enabl
 
 ## Third-Party Services
 
-TunnelMint may connect to services explicitly configured or selected by the user, including VPN endpoints and DNS resolvers. Those services operate under their own privacy policies and terms.
+WireHush may connect to services explicitly configured or selected by the user, including VPN endpoints and DNS resolvers. Those services operate under their own privacy policies and terms.
 
 ## Logs
 

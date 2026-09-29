@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $captureActive = $false
-$firewallRuleName = "TunnelMint Task014 DoH break $([Guid]::NewGuid().ToString('N'))"
+$firewallRuleName = "WireHush Task014 DoH break $([Guid]::NewGuid().ToString('N'))"
 $captureDirectory = 'C:\TunnelMint-Test'
 
 function Get-EndpointFingerprint {
@@ -29,17 +29,17 @@ function Get-EndpointFingerprint {
 function Get-TunnelContext {
     $services = @(Get-Service -Name 'TunnelMintTunnel$*' -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Running' })
     if ($services.Count -ne 1) {
-        throw "Expected exactly one running TunnelMint tunnel service; found $($services.Count)."
+        throw "Expected exactly one running WireHush tunnel service; found $($services.Count)."
     }
     $service = $services[0]
     $cim = Get-CimInstance Win32_Service -Filter "Name = '$($service.Name)'" -ErrorAction Stop
     if (-not $cim.ProcessId) {
-        throw 'The running TunnelMint tunnel service has no process ID.'
+        throw 'The running WireHush tunnel service has no process ID.'
     }
     $alias = $service.Name.Substring('TunnelMintTunnel$'.Length)
     $adapter = Get-NetAdapter -Name $alias -IncludeHidden -ErrorAction Stop
     if ($adapter.Status -ne 'Up') {
-        throw 'The TunnelMint tunnel adapter is not Up.'
+        throw 'The WireHush tunnel adapter is not Up.'
     }
     return [ordered]@{
         serviceName = $service.Name
@@ -118,7 +118,7 @@ function Start-Port53Capture {
     param([string] $EtlPath)
 
     & pktmon filter remove *> $null
-    & pktmon filter add 'TunnelMintTask014Port53' -p 53 *> $null
+    & pktmon filter add 'WireHushTask014Port53' -p 53 *> $null
     & pktmon start --capture --file-name $EtlPath *> $null
     $script:captureActive = $true
 }
@@ -290,7 +290,7 @@ try {
     $result.dnsLoopback = Get-DnsLoopbackSummary -InterfaceIndex $context.interfaceIndex
     $result.systemDns = Get-SystemDnsSummary
     if (-not $result.dnsLoopback.loopbackOnly) {
-        throw 'The TunnelMint adapter DNS configuration is not loopback-only.'
+        throw 'The WireHush adapter DNS configuration is not loopback-only.'
     }
 
     $endpointAddresses = @(Get-EndpointAddresses -Uri $uri)

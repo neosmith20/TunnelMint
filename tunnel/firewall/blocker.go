@@ -185,7 +185,7 @@ func installFirewall(luid uint64, doNotRestrict bool, restrictToDNSServers []net
 	return session, nil
 }
 
-// ReconfigureDNS replaces TunnelMint's dynamic WFP session so a temporary
+// ReconfigureDNS replaces WireHush's dynamic WFP session so a temporary
 // bootstrap resolver exception can be removed after DoH verification.
 func ReconfigureDNS(luid uint64, doNotRestrict bool, exceptions []netip.Addr) error {
 	newSession, err := replaceSession(wfpSession, func() (uintptr, error) {

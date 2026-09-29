@@ -1,14 +1,14 @@
-# TunnelMint
+# WireHush
 
 **A simple, user-friendly WireGuard-based VPN client with smarter DNS.**
 
-TunnelMint is an independent VPN client built around WireGuard with one core goal: **keep it simple and make the software do the work.**
+WireHush is an independent VPN client built around WireGuard with one core goal: **keep it simple and make the software do the work.**
 
 The first release is being developed for Windows, with Android planned after the Windows client is stable and polished.
 
-## Why TunnelMint?
+## Why WireHush?
 
-TunnelMint aims to preserve a simple tunnel workflow while adding quality-of-life features that should not require users to understand the plumbing underneath.
+WireHush aims to preserve a simple tunnel workflow while adding quality-of-life features that should not require users to understand the plumbing underneath.
 
 The first major addition is transparent encrypted DNS support.
 
@@ -18,13 +18,13 @@ A normal DNS entry should continue to work normally:
 DNS = 1.1.1.1
 ```
 
-TunnelMint will also understand a DoH endpoint directly:
+WireHush will also understand a DoH endpoint directly:
 
 ```ini
 DNS = https://dns.example.com/dns-query
 ```
 
-TunnelMint detects the HTTPS endpoint, bootstraps it automatically, and sends encrypted DNS traffic through the active tunnel. The implementation is still alpha software and awaits owner testing on an elevated Windows system with real tunnel peers.
+WireHush detects the HTTPS endpoint, bootstraps it automatically, and sends encrypted DNS traffic through the active tunnel. The implementation is still alpha software and awaits owner testing on an elevated Windows system with real tunnel peers.
 
 No separate `EncryptedDNS=true` switch. No unnecessary configuration maze.
 
@@ -44,9 +44,9 @@ No separate `EncryptedDNS=true` switch. No unnecessary configuration maze.
 
 ## Bootstrap DNS
 
-Encrypted DNS endpoints use hostnames, so TunnelMint may need a traditional DNS resolver briefly to locate the DoH endpoint before encrypted DNS is available.
+Encrypted DNS endpoints use hostnames, so WireHush may need a traditional DNS resolver briefly to locate the DoH endpoint before encrypted DNS is available.
 
-TunnelMint ships with multiple bootstrap resolvers for reliability, while allowing users to change, disable, reorder, or replace them in **Settings**.
+WireHush ships with multiple bootstrap resolvers for reliability, while allowing users to change, disable, reorder, or replace them in **Settings**.
 
 Bootstrap DNS is only intended to locate the encrypted DNS endpoint. Normal DNS queries should then use the configured encrypted resolver.
 
@@ -56,7 +56,7 @@ Bootstrap DNS is only intended to locate the encrypted DNS endpoint. Normal DNS 
 
 The user should be able to:
 
-1. Download TunnelMint.
+1. Download WireHush.
 2. Install it.
 3. Import a tunnel.
 4. Connect.
@@ -67,7 +67,7 @@ Advanced networking details belong inside the software whenever they can be hand
 
 > **Alpha/development software.**
 
-TunnelMint is not currently ready for production use. Automated tests and reproducible development builds pass, while real Windows install/coexistence, service, packet-leak, sleep/wake, IPv6, and real-peer acceptance remain owner verification items.
+WireHush is not currently ready for production use. Automated tests and reproducible development builds pass, while real Windows install/coexistence, service, packet-leak, sleep/wake, IPv6, and real-peer acceptance remain owner verification items.
 
 See [ROADMAP.md](ROADMAP.md) for the initial development plan.
 
@@ -89,10 +89,10 @@ Please report security issues according to [SECURITY.md](SECURITY.md). Do not pu
 
 ## Licensing
 
-TunnelMint's original project code is licensed under the terms in [LICENSE](LICENSE). Third-party components remain subject to their own licenses and required notices; those notices will be maintained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) as dependencies are incorporated.
+WireHush's original project code is licensed under the terms in [LICENSE](LICENSE). Third-party components remain subject to their own licenses and required notices; those notices will be maintained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) as dependencies are incorporated.
 
 ## WireGuard
 
-TunnelMint uses WireGuard as its VPN tunnel technology while providing its own client experience and additional functionality around it.
+WireHush uses WireGuard as its VPN tunnel technology while providing its own client experience and additional functionality around it.
 
-TunnelMint is an independent project and is not affiliated with or endorsed by the WireGuard project.
+WireHush is an independent project and is not affiliated with or endorsed by the WireGuard project.

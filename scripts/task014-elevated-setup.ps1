@@ -1,19 +1,19 @@
 [CmdletBinding()]
 param(
-    [string] $MsiPath = 'C:\Dev\tunnelmint\installer\dist\tunnelmint-amd64-0.1.0.msi',
+    [string] $MsiPath = 'C:\Dev\tunnelmint\installer\dist\wirehush-amd64-0.1.0.msi',
     [string] $ResultPath = 'C:\TunnelMint-Test\task014-elevated-results.json'
 )
 
 $ErrorActionPreference = 'Stop'
 
-function Get-TunnelMintInstallations {
+function Get-WireHushInstallations {
     $uninstallPaths = @(
         'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
         'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
     )
 
     Get-ItemProperty -Path $uninstallPaths -ErrorAction SilentlyContinue |
-        Where-Object { $_.DisplayName -eq 'TunnelMint Development' } |
+        Where-Object { $_.DisplayName -in @('WireHush Development', 'TunnelMint Development') } |
         ForEach-Object { $_.PSChildName }
 }
 
@@ -33,7 +33,7 @@ $result = [ordered]@{
     msiPath = $MsiPath
     uninstall = [ordered]@{ attempted = $false; productCodes = @(); exitCodes = @() }
     install = [ordered]@{ attempted = $false; exitCode = $null }
-    installedUpdate = [ordered]@{ path = 'C:\Program Files\TunnelMint\tunnelmint.exe'; exitCode = $null }
+    installedUpdate = [ordered]@{ path = 'C:\Program Files\TunnelMint\wirehush.exe'; exitCode = $null }
     manager = [ordered]@{ exists = $false; status = $null; startType = $null }
     ui = [ordered]@{ started = $false; running = $false; windowTitle = $null; windowHandle = $null; exitCode = $null }
     error = $null
@@ -51,32 +51,32 @@ try {
         throw "MSI not found: $MsiPath"
     }
 
-    $productCodes = @(Get-TunnelMintInstallations)
+    $productCodes = @(Get-WireHushInstallations)
     $result.uninstall.productCodes = $productCodes
     foreach ($productCode in $productCodes) {
         $result.uninstall.attempted = $true
         $exitCode = Invoke-Msi -Arguments @('/x', $productCode, '/qn', '/norestart')
         $result.uninstall.exitCodes += $exitCode
         if ($exitCode -ne 0) {
-            throw "TunnelMint uninstall failed with MSI exit code $exitCode."
+            throw "WireHush uninstall failed with MSI exit code $exitCode."
         }
     }
 
     $result.install.attempted = $true
     $result.install.exitCode = Invoke-Msi -Arguments @('/i', $MsiPath, '/qn', '/norestart')
     if ($result.install.exitCode -ne 0) {
-        throw "TunnelMint install failed with MSI exit code $($result.install.exitCode)."
+        throw "WireHush install failed with MSI exit code $($result.install.exitCode)."
     }
 
     $installedClient = $result.installedUpdate.path
     if (-not (Test-Path -LiteralPath $installedClient -PathType Leaf)) {
-        throw "Installed TunnelMint client not found: $installedClient"
+        throw "Installed WireHush client not found: $installedClient"
     }
 
     $updateProcess = Start-Process -FilePath $installedClient -ArgumentList '/update' -Wait -PassThru
     $result.installedUpdate.exitCode = $updateProcess.ExitCode
     if ($result.installedUpdate.exitCode -ne 0) {
-        throw "Installed TunnelMint /update failed with exit code $($result.installedUpdate.exitCode)."
+        throw "Installed WireHush /update failed with exit code $($result.installedUpdate.exitCode)."
     }
 
     # The normal launch invokes the elevated manager installer and exits. The
@@ -91,8 +91,8 @@ try {
     $result.manager.status = $service.Status.ToString()
     $result.manager.startType = $service.StartType.ToString()
 
-    $uiProcess = Get-Process -Name 'tunnelmint' -ErrorAction SilentlyContinue |
-        Where-Object { $_.MainWindowTitle -like 'TunnelMint*' } |
+    $uiProcess = Get-Process -Name 'wirehush' -ErrorAction SilentlyContinue |
+        Where-Object { $_.MainWindowTitle -like 'WireHush*' } |
         Select-Object -First 1
     if ($uiProcess) {
         $result.ui.running = $true
@@ -101,10 +101,10 @@ try {
     }
 
     if ($service.Status -ne 'Running') {
-        throw "TunnelMintManager service is $($service.Status), not Running."
+        throw "WireHush Manager service (TunnelMintManager) is $($service.Status), not Running."
     }
     if (-not $result.ui.running) {
-        throw 'TunnelMint normal startup did not produce a TunnelMint UI window.'
+        throw 'WireHush normal startup did not produce a WireHush UI window.'
     }
 }
 catch {

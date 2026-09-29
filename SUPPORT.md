@@ -1,6 +1,6 @@
 # Support
 
-TunnelMint is currently in early development.
+WireHush is currently in early development.
 
 ## Getting Help
 
@@ -8,7 +8,7 @@ For installation problems, configuration questions, bugs, or feature requests, u
 
 When asking for help, include:
 
-- TunnelMint version or commit;
+- WireHush version or commit;
 - operating system and version;
 - what you expected to happen;
 - what actually happened;

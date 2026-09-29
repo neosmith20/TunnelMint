@@ -1,13 +1,16 @@
 /* SPDX-License-Identifier: MIT
  *
- * Copyright (C) 2026 TunnelMint contributors. All Rights Reserved.
+ * Copyright (C) 2026 WireHush contributors. All Rights Reserved.
  */
 
 package product
 
 import "testing"
 
-func TestRuntimeIdentityIsTunnelMintOwned(t *testing.T) {
+func TestRuntimeIdentityIsWireHushOwned(t *testing.T) {
+	if Name != "WireHush" {
+		t.Fatalf("unexpected product name %q", Name)
+	}
 	if ManagerServiceName == "WireGuardManager" {
 		t.Fatal("manager service name collides with upstream WireGuard")
 	}
@@ -19,5 +22,14 @@ func TestRuntimeIdentityIsTunnelMintOwned(t *testing.T) {
 	}
 	if ManagerWindowClass == "WireGuard UI - Manage Tunnels" {
 		t.Fatal("window identity collides with upstream WireGuard")
+	}
+}
+
+func TestLegacyPersistentIdentityIsExplicit(t *testing.T) {
+	if ManagerServiceName != LegacyManagerServiceName || TunnelServicePrefix != LegacyTunnelServicePrefix {
+		t.Fatal("service compatibility identifiers changed")
+	}
+	if DataDirectoryName != LegacyDataDirectoryName || AdminRegistryKey != LegacyAdminRegistryKey {
+		t.Fatal("data compatibility identifiers changed")
 	}
 }

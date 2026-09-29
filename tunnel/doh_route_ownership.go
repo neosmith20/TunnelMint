@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: MIT
  *
- * Copyright (C) 2026 TunnelMint contributors. All Rights Reserved.
+ * Copyright (C) 2026 WireHush contributors. All Rights Reserved.
  */
 
 package tunnel
 
 import "net/netip"
 
-// dohRouteOwnership remembers which host routes TunnelMint created. A route
+// dohRouteOwnership remembers which host routes WireHush created. A route
 // that was already present must stay unowned, while reapplying a route that
-// TunnelMint created must preserve that ownership across recovery.
+// WireHush created must preserve that ownership across recovery.
 type dohRouteOwnership struct {
 	routes map[netip.Prefix]bool
 }

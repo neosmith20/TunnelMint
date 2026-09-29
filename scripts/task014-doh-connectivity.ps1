@@ -47,7 +47,7 @@ function Get-EndpointRouteSummary {
 
     try {
         # Keep resolved addresses in memory. The result records only whether the
-        # selected route belongs to a TunnelMint adapter, never the addresses.
+        # selected route belongs to a WireHush adapter, never the addresses.
         $records = @(
             Resolve-DnsName -Name 'cloudflare-dns.com' -Type A -DnsOnly -ErrorAction Stop
             Resolve-DnsName -Name 'cloudflare-dns.com' -Type AAAA -DnsOnly -ErrorAction Stop
@@ -103,7 +103,7 @@ try {
     $result.tunnelServices.count = $services.Count
     $result.tunnelServices.runningCount = @($services | Where-Object { $_.Status -eq 'Running' }).Count
     if ($result.tunnelServices.runningCount -eq 0) {
-        throw 'No running TunnelMint tunnel service was found. Activate the known-good plain-DNS tunnel first.'
+        throw 'No running WireHush tunnel service was found. Activate the known-good plain-DNS tunnel first.'
     }
 
     # Tunnel adapter aliases match tunnel service suffixes. They remain only in
@@ -114,7 +114,7 @@ try {
     $result.tunnelAdapters.upCount = @($adapters | Where-Object { $_.Status -eq 'Up' }).Count
     $result.tunnelAdapters.routeCount = @($adapters | ForEach-Object { @(Get-NetRoute -InterfaceIndex $_.ifIndex -ErrorAction SilentlyContinue) }).Count
     if ($result.tunnelAdapters.upCount -eq 0) {
-        throw 'No active TunnelMint tunnel adapter was found.'
+        throw 'No active WireHush tunnel adapter was found.'
     }
     $tunnelIfIndexes = @($adapters | ForEach-Object { [int] $_.ifIndex })
     $result.endpointRoute = Get-EndpointRouteSummary -TunnelInterfaceIndexes $tunnelIfIndexes

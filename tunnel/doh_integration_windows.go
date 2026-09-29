@@ -2,7 +2,7 @@
 
 /* SPDX-License-Identifier: MIT
  *
- * Copyright (C) 2026 TunnelMint contributors. All Rights Reserved.
+ * Copyright (C) 2026 WireHush contributors. All Rights Reserved.
  */
 
 package tunnel
@@ -193,7 +193,7 @@ func activateEncryptedDNS(ctx context.Context, config *conf.Config, luid winipcf
 func configuredBootstrapResolvers() ([]netip.Addr, error) {
 	root, err := conf.RootDirectory(true)
 	if err != nil {
-		return nil, errors.New("locate TunnelMint data directory: " + err.Error())
+		return nil, errors.New("locate WireHush data directory: " + err.Error())
 	}
 	settings, err := bootstrap.Load(filepath.Join(root, "bootstrap-dns.json"))
 	if err != nil {

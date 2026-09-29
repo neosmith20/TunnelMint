@@ -50,7 +50,7 @@ try {
     $result.tunnelServices.count = $services.Count
     $result.tunnelServices.runningCount = @($services | Where-Object { $_.Status -eq 'Running' }).Count
     if ($result.tunnelServices.runningCount -eq 0) {
-        throw 'No running TunnelMint tunnel service was found.'
+        throw 'No running WireHush tunnel service was found.'
     }
 
     # Tunnel adapter aliases match the service suffix. Keep aliases only in
@@ -63,7 +63,7 @@ try {
         @(Get-NetRoute -InterfaceIndex $_.ifIndex -ErrorAction SilentlyContinue)
     }).Count
     if ($result.tunnelAdapters.upCount -eq 0) {
-        throw 'No TunnelMint tunnel adapter is Up.'
+        throw 'No WireHush tunnel adapter is Up.'
     }
 
     $before = Get-AdapterCounters -Names $aliases

@@ -40,7 +40,7 @@ func NewUpdatePage() (*UpdatePage, error) {
 	if err != nil {
 		return nil, err
 	}
-	instructions.SetText(l18n.Sprintf("TunnelMint updates are unavailable until signed release infrastructure is available."))
+	instructions.SetText(l18n.Sprintf("WireHush updates are unavailable until signed release infrastructure is available."))
 	instructions.SetMinMaxSize(walk.Size{1, 0}, walk.Size{0, 0})
 
 	status, err := walk.NewTextLabel(up)

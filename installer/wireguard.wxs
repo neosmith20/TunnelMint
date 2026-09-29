@@ -25,24 +25,24 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Product
 		Id="*"
-		Name="TunnelMint Development"
+		Name="WireHush Development"
 		Language="1033"
 		Version="$(var.WIREGUARD_VERSION)"
-		Manufacturer="TunnelMint contributors"
+		Manufacturer="WireHush contributors"
 		UpgradeCode="$(var.UpgradeCode)">
 		<Package
 			InstallerVersion="500"
 			Compressed="yes"
 			InstallScope="perMachine"
-			Description="TunnelMint development VPN client"
+			Description="WireHush development VPN client"
 			ReadOnly="yes" />
 
 		<MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-		<Icon Id="tunnelmint.ico" SourceFile="..\ui\icon\tunnelmint.ico" />
+		<Icon Id="wirehush.ico" SourceFile="..\ui\icon\wirehush.ico" />
 		<Binary Id="customactions.dll" SourceFile="$(var.WIREGUARD_PLATFORM)\customactions.dll" />
 
-		<Property Id="ARPPRODUCTICON" Value="tunnelmint.ico" />
+		<Property Id="ARPPRODUCTICON" Value="wirehush.ico" />
 		<Property Id="ARPURLINFOABOUT" Value="https://github.com/neosmith20/TunnelMint" />
 		<Property Id="ARPNOMODIFY" Value="yes" />
 		<Property Id="DISABLEADVTSHORTCUTS" Value="yes" />
@@ -65,8 +65,8 @@
 		-->
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="$(var.PlatformProgramFilesFolder)">
-				<Directory Id="TunnelMintFolder" Name="TunnelMint">
-					<Directory Id="TunnelMintNoticesFolder" Name="Notices" />
+				<Directory Id="wirehushFolder" Name="TunnelMint">
+					<Directory Id="wirehushNoticesFolder" Name="Notices" />
 				</Directory>
 			</Directory>
 			<Directory Id="ProgramMenuFolder" />
@@ -75,27 +75,27 @@
 		<!--
 			Components
 		-->
-		<ComponentGroup Id="TunnelMintComponents">
-			<Component Directory="TunnelMintFolder" Id="TunnelMintExecutable" Guid="0d4a3a8e-26f2-40e5-9a0e-f1ac70a0fc99">
-				<File Source="..\$(var.WIREGUARD_PLATFORM)\tunnelmint.exe" KeyPath="yes">
-					<Shortcut Id="TunnelMintStartMenuShortcut" Directory="ProgramMenuFolder" Name="TunnelMint" Description="TunnelMint development VPN client" WorkingDirectory="TunnelMintFolder" Advertise="yes" />
+		<ComponentGroup Id="wirehushComponents">
+			<Component Directory="wirehushFolder" Id="wirehushExecutable" Guid="0d4a3a8e-26f2-40e5-9a0e-f1ac70a0fc99">
+				<File Source="..\$(var.WIREGUARD_PLATFORM)\wirehush.exe" KeyPath="yes">
+					<Shortcut Id="wirehushStartMenuShortcut" Directory="ProgramMenuFolder" Name="WireHush" Description="WireHush development VPN client" WorkingDirectory="wirehushFolder" Advertise="yes" />
 				</File>
 				<ServiceControl Id="DummyService.3AA0C492_29F4_4342_B608_DB95B2DECB13" Name="DummyService.3AA0C492_29F4_4342_B608_DB95B2DECB13" /><!-- A dummy to make WiX create ServiceControl table for us. -->
 			</Component>
-			<Component Directory="TunnelMintFolder" Id="TunnelMintWgExecutable" Guid="0f2e419a-d4f9-4ebc-8ebc-378f90e5d3e3">
+			<Component Directory="wirehushFolder" Id="wirehushWgExecutable" Guid="0f2e419a-d4f9-4ebc-8ebc-378f90e5d3e3">
 				<File Source="..\$(var.WIREGUARD_PLATFORM)\wg.exe" KeyPath="yes" />
-				<Environment Id="PATH" Name="PATH" System="yes" Action="set" Part="last" Permanent="no" Value="[TunnelMintFolder]" />
+				<Environment Id="PATH" Name="PATH" System="yes" Action="set" Part="last" Permanent="no" Value="[wirehushFolder]" />
 			</Component>
-			<Component Directory="TunnelMintNoticesFolder" Id="TunnelMintLicense" Guid="a1a4d19f-13ce-4d79-a1fb-e9cb1a9f8eb5">
+			<Component Directory="wirehushNoticesFolder" Id="wirehushLicense" Guid="a1a4d19f-13ce-4d79-a1fb-e9cb1a9f8eb5">
 				<File Source="..\LICENSE" KeyPath="yes" />
 			</Component>
-			<Component Directory="TunnelMintNoticesFolder" Id="TunnelMintWireGuardCopying" Guid="50b7ae91-5b45-4d57-bf26-00e43e93707b">
+			<Component Directory="wirehushNoticesFolder" Id="wirehushWireGuardCopying" Guid="50b7ae91-5b45-4d57-bf26-00e43e93707b">
 				<File Source="..\WIREGUARD-COPYING" KeyPath="yes" />
 			</Component>
-			<Component Directory="TunnelMintNoticesFolder" Id="TunnelMintThirdPartyNotices" Guid="b1c1d5c4-2e84-4cc5-a530-7a6d0b6db078">
+			<Component Directory="wirehushNoticesFolder" Id="wirehushThirdPartyNotices" Guid="b1c1d5c4-2e84-4cc5-a530-7a6d0b6db078">
 				<File Source="..\THIRD_PARTY_NOTICES.md" KeyPath="yes" />
 			</Component>
-			<Component Directory="TunnelMintNoticesFolder" Id="TunnelMintGPL2" Guid="ce8f0ac8-34d1-4e8b-a62f-593e0e3a2e35">
+			<Component Directory="wirehushNoticesFolder" Id="wirehushGPL2" Guid="ce8f0ac8-34d1-4e8b-a62f-593e0e3a2e35">
 				<File Source="..\GPL-2.0.txt" KeyPath="yes" />
 			</Component>
 		</ComponentGroup>
@@ -103,8 +103,8 @@
 		<!--
 			Features
 		-->
-		<Feature Id="TunnelMintFeature" Title="TunnelMint Development" Level="1">
-			<ComponentGroupRef Id="TunnelMintComponents" />
+		<Feature Id="wirehushFeature" Title="WireHush Development" Level="1">
+			<ComponentGroupRef Id="wirehushComponents" />
 		</Feature>
 
 		<!--
@@ -124,15 +124,15 @@
 		</InstallExecuteSequence>
 
 		<!--
-			Evaluate TunnelMint services and populate ServiceControl table
+			Evaluate WireHush services and populate ServiceControl table
 		-->
-		<CustomAction Id="EvaluateTunnelMintServices" BinaryKey="customactions.dll" DllEntry="EvaluateTunnelMintServices" />
+		<CustomAction Id="EvaluatewirehushServices" BinaryKey="customactions.dll" DllEntry="EvaluatewirehushServices" />
 		<InstallExecuteSequence>
-			<Custom Action="EvaluateTunnelMintServices" After="FindRelatedProducts" />
+			<Custom Action="EvaluatewirehushServices" After="FindRelatedProducts" />
 		</InstallExecuteSequence>
 
 		<!--
-			Launch tunnelmint.exe on product reconfiguration (starting same MSI again)
+			Launch WireHush.exe on product reconfiguration (starting same MSI again)
 		-->
 		<CustomAction Id="LaunchApplicationAndAbort" BinaryKey="customactions.dll" DllEntry="LaunchApplicationAndAbort" />
 		<InstallExecuteSequence>
@@ -140,19 +140,19 @@
 		</InstallExecuteSequence>
 
 		<!--
-			Evaluate TunnelMint components
+			Evaluate WireHush components
 		-->
-		<CustomAction Id="EvaluateTunnelMintComponents" BinaryKey="customactions.dll" DllEntry="EvaluateTunnelMintComponents" />
+		<CustomAction Id="EvaluatewirehushComponents" BinaryKey="customactions.dll" DllEntry="EvaluatewirehushComponents" />
 		<InstallExecuteSequence>
-			<Custom Action="EvaluateTunnelMintComponents" After="ProcessComponents" />
+			<Custom Action="EvaluatewirehushComponents" After="ProcessComponents" />
 		</InstallExecuteSequence>
 
 		<!--
-			Kill lingering TunnelMint processes
+			Kill lingering WireHush processes
 		-->
-		<CustomAction Id="KillTunnelMintProcesses" BinaryKey="customactions.dll" DllEntry="KillTunnelMintProcesses" Execute="deferred" Impersonate="no" />
+		<CustomAction Id="KillwirehushProcesses" BinaryKey="customactions.dll" DllEntry="KillwirehushProcesses" Execute="deferred" Impersonate="no" />
 		<InstallExecuteSequence>
-			<Custom Action="KillTunnelMintProcesses" After="StopServices" />
+			<Custom Action="KillwirehushProcesses" After="StopServices" />
 		</InstallExecuteSequence>
 
 		<!--
@@ -172,11 +172,11 @@
 		</InstallExecuteSequence>
 
 		<!--
-			Launch tunnelmint.exe after setup complete
+			Launch WireHush.exe after setup complete
 		-->
-		<CustomAction Id="LaunchApplication" HideTarget="yes" Impersonate="no" Execute="deferred" FileKey="tunnelmint.exe" ExeCommand="" Return="asyncNoWait" />
+		<CustomAction Id="LaunchApplication" HideTarget="yes" Impersonate="no" Execute="deferred" FileKey="wirehush.exe" ExeCommand="" Return="asyncNoWait" />
 		<InstallExecuteSequence>
-			<Custom Action="LaunchApplication" Before="InstallFinalize">(&amp;TunnelMintFeature = 3) AND NOT DO_NOT_LAUNCH</Custom>
+			<Custom Action="LaunchApplication" Before="InstallFinalize">(&amp;wirehushFeature = 3) AND NOT DO_NOT_LAUNCH</Custom>
 		</InstallExecuteSequence>
 	</Product>
 </Wix>

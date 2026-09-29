@@ -1,6 +1,6 @@
-# TunnelMint Roadmap
+# WireHush Roadmap
 
-TunnelMint is intentionally starting small. The goal is to produce a clean Windows client first, prove the encrypted DNS design, and only then expand to Android.
+WireHush is intentionally starting small. The goal is to produce a clean Windows client first, prove the encrypted DNS design, and only then expand to Android.
 
 ## Phase 0 — Baseline
 
@@ -8,9 +8,9 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 - [x] Build the untouched Windows baseline successfully.
 - [ ] Confirm tunnel import, connect, disconnect, handshake, and traffic behavior.
 - [x] Document a reproducible build procedure.
-- [x] Establish TunnelMint development branding so test builds are clearly identifiable.
+- [x] Establish WireHush development branding so test builds are clearly identifiable.
 
-**Exit criteria:** A reproducible TunnelMint development build behaves correctly before any new networking behavior is introduced.
+**Exit criteria:** A reproducible WireHush development build behaves correctly before any new networking behavior is introduced.
 
 ## Phase 1 — DNS Configuration
 
@@ -19,7 +19,7 @@ TunnelMint is intentionally starting small. The goal is to produce a clean Windo
 - [x] Preserve encrypted DNS endpoint paths and identifiers exactly.
 - [x] Add parsing tests for plain DNS and encrypted DNS configurations.
 
-**Exit criteria:** TunnelMint can safely distinguish normal DNS from DoH without breaking standard configurations.
+**Exit criteria:** WireHush can safely distinguish normal DNS from DoH without breaking standard configurations.
 
 ## Phase 2 — Encrypted DNS Engine
 
@@ -57,10 +57,10 @@ Add a simple Settings area for bootstrap DNS.
 
 **Exit criteria:** Default behavior requires no setup, while users retain control over bootstrap resolver choices.
 
-## Phase 5 — TunnelMint UI
+## Phase 5 — WireHush UI
 
 - [x] Keep tunnel import, activation, status, and editing simple.
-- [x] Make the interface visually distinct and clearly TunnelMint.
+- [x] Make the interface visually distinct and clearly WireHush.
 - [x] Display whether DNS is plain or encrypted.
 - [x] Show basic tunnel, handshake, traffic, and DNS status.
 - [x] Keep the interface uncluttered.
@@ -76,13 +76,13 @@ Add a simple Settings area for bootstrap DNS.
 - [x] Verify no private keys, credentials, or test configurations are included in release artifacts.
 - [x] Prepare release notes and known limitations.
 
-**Exit criteria:** TunnelMint can be installed and used as normal end-user Windows software.
+**Exit criteria:** WireHush can be installed and used as normal end-user Windows software.
 
 ## Phase 7 — Android
 
 Android development begins only after the Windows behavior and configuration model are stable.
 
-- [ ] Reuse the same TunnelMint configuration behavior where practical.
+- [ ] Reuse the same WireHush configuration behavior where practical.
 - [ ] Support standard tunnel import.
 - [ ] Support `DNS = <IP>` and `DNS = https://...` consistently with Windows.
 - [ ] Add automatic configurable bootstrap DNS.

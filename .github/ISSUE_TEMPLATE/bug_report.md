@@ -1,12 +1,12 @@
 ---
 name: Bug report
-about: Report a reproducible TunnelMint problem
+about: Report a reproducible WireHush problem
 title: "[Bug] "
 labels: bug
 assignees: ""
 ---
 
-## TunnelMint Version
+## WireHush Version
 
 Version, release, or commit:
 

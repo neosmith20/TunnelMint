@@ -67,7 +67,7 @@ func WaitForRaiseUIThenQuit() {
 		return 0
 	}, 0, 0, win.WINEVENT_SKIPOWNPROCESS|win.WINEVENT_OUTOFCONTEXT)
 	if err != nil {
-		showErrorCustom(nil, l18n.Sprintf("TunnelMint Detection Error"), l18n.Sprintf("Unable to wait for TunnelMint window to appear: %v", err))
+		showErrorCustom(nil, l18n.Sprintf("WireHush Detection Error"), l18n.Sprintf("Unable to wait for WireHush window to appear: %v", err))
 		os.Exit(1)
 	}
 	for {

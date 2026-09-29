@@ -6,7 +6,7 @@
 package updater
 
 const (
-	// updatesEnabled remains false until TunnelMint has its own signed release
+	// updatesEnabled remains false until WireHush has its own signed release
 	// infrastructure. The updater package stays isolated for that future work.
 	updatesEnabled         = false
 	releasePublicKeyBase64 = "RWRNqGKtBXftKTKPpBPGDMe8jHLnFQ0EdRy8Wg0apV6vTDFLAODD83G4"
@@ -15,6 +15,6 @@ const (
 	updateServerUseHttps   = true
 	latestVersionPath      = "/releases/latest.sig"
 	msiPath                = "/releases/%s"
-	msiArchPrefix          = "tunnelmint-%s-"
+	msiArchPrefix          = "wirehush-%s-"
 	msiSuffix              = ".msi"
 )
