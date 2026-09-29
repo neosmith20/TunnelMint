@@ -69,6 +69,9 @@ type peerView struct {
 
 type ConfView struct {
 	*walk.ScrollView
+	title           *walk.Label
+	state           *walk.Label
+	summaries       []*summaryCard
 	name            *walk.GroupBox
 	interfaze       *interfaceView
 	peers           map[conf.Key]*peerView
@@ -76,6 +79,36 @@ type ConfView struct {
 	tunnel          *manager.Tunnel
 	updateTicker    *time.Ticker
 	quit            chan struct{}
+}
+
+type summaryCard struct {
+	value *walk.Label
+}
+
+func newSummaryCard(parent walk.Container, heading string) (*summaryCard, error) {
+	card, err := walk.NewComposite(parent)
+	if err != nil {
+		return nil, err
+	}
+	card.SetMinMaxSize(walk.Size{150, 64}, walk.Size{0, 64})
+	layout := walk.NewVBoxLayout()
+	layout.SetMargins(walk.Margins{12, 8, 12, 8})
+	layout.SetSpacing(2)
+	card.SetLayout(layout)
+	applyDarkSurface(card, uiCardBrush)
+	label, err := walk.NewLabel(card)
+	if err != nil {
+		return nil, err
+	}
+	label.SetText(heading)
+	applyMutedText(label)
+	value, err := walk.NewLabel(card)
+	if err != nil {
+		return nil, err
+	}
+	value.SetText("—")
+	value.SetTextColor(uiTextColor)
+	return &summaryCard{value: value}, nil
 }
 
 func (lsl *labelStatusLine) widgets() (walk.Widget, walk.Widget) {
@@ -113,6 +146,7 @@ func newLabelStatusLine(parent walk.Container) (*labelStatusLine, error) {
 	disposables.Add(lsl.label)
 	lsl.label.SetText(l18n.Sprintf("Status:"))
 	lsl.label.SetTextAlignment(walk.AlignHFarVNear)
+	lsl.label.SetTextColor(uiMutedColor)
 
 	if lsl.statusComposite, err = walk.NewComposite(parent); err != nil {
 		return nil, err
@@ -123,6 +157,7 @@ func newLabelStatusLine(parent walk.Container) (*labelStatusLine, error) {
 	layout.SetAlignment(walk.AlignHNearVNear)
 	layout.SetSpacing(0)
 	lsl.statusComposite.SetLayout(layout)
+	applyDarkSurface(lsl.statusComposite, uiCardBrush)
 
 	if lsl.statusImage, err = walk.NewImageView(lsl.statusComposite); err != nil {
 		return nil, err
@@ -137,7 +172,8 @@ func newLabelStatusLine(parent walk.Container) (*labelStatusLine, error) {
 	disposables.Add(lsl.statusLabel)
 	win.SetWindowLong(lsl.statusLabel.Handle(), win.GWL_EXSTYLE, win.GetWindowLong(lsl.statusLabel.Handle(), win.GWL_EXSTYLE)&^win.WS_EX_CLIENTEDGE)
 	lsl.statusLabel.SetReadOnly(true)
-	lsl.statusLabel.SetBackground(walk.NullBrush())
+	lsl.statusLabel.SetBackground(uiCardBrush)
+	lsl.statusLabel.SetTextColor(uiTextColor)
 	lsl.statusLabel.FocusedChanged().Attach(func() {
 		lsl.statusLabel.SetTextSelection(0, 0)
 	})
@@ -191,6 +227,7 @@ func newLabelTextLine(fieldName string, parent walk.Container) (*labelTextLine, 
 	disposables.Add(lt.label)
 	lt.label.SetText(fieldName)
 	lt.label.SetTextAlignment(walk.AlignHFarVNear)
+	lt.label.SetTextColor(uiMutedColor)
 	lt.label.SetVisible(false)
 
 	if lt.text, err = walk.NewTextEdit(parent); err != nil {
@@ -200,7 +237,8 @@ func newLabelTextLine(fieldName string, parent walk.Container) (*labelTextLine, 
 	win.SetWindowLong(lt.text.Handle(), win.GWL_EXSTYLE, win.GetWindowLong(lt.text.Handle(), win.GWL_EXSTYLE)&^win.WS_EX_CLIENTEDGE)
 	lt.text.SetCompactHeight(true)
 	lt.text.SetReadOnly(true)
-	lt.text.SetBackground(walk.NullBrush())
+	lt.text.SetBackground(uiCardBrush)
+	lt.text.SetTextColor(uiTextColor)
 	lt.text.SetVisible(false)
 	lt.text.FocusedChanged().Attach(func() {
 		lt.text.SetTextSelection(0, 0)
@@ -261,6 +299,7 @@ func newToggleActiveLine(parent walk.Container) (*toggleActiveLine, error) {
 		return nil, err
 	}
 	disposables.Add(tal.button)
+	tal.button.SetBackground(uiAccentBrush)
 	walk.NewHSpacer(tal.composite)
 	tal.update(manager.TunnelStopped)
 
@@ -529,6 +568,7 @@ func newPaddedGroupGrid(parent walk.Container) (group *walk.GroupBox, err error)
 	if err != nil {
 		return nil, err
 	}
+	applyDarkSurface(group, uiCardBrush)
 	spacer, err := walk.NewSpacerWithCfg(group, &walk.SpacerCfg{walk.GrowableHorz | walk.GreedyHorz, walk.Size{10, 0}, false})
 	if err != nil {
 		return nil, err
@@ -548,8 +588,48 @@ func NewConfView(parent walk.Container) (*ConfView, error) {
 	}
 	disposables.Add(cv)
 	vlayout := walk.NewVBoxLayout()
-	vlayout.SetMargins(walk.Margins{5, 0, 5, 0})
+	vlayout.SetMargins(walk.Margins{16, 14, 16, 16})
+	vlayout.SetSpacing(12)
 	cv.SetLayout(vlayout)
+	applyDarkSurface(cv, uiCanvasBrush)
+
+	header, err := walk.NewComposite(cv)
+	if err != nil {
+		return nil, err
+	}
+	header.SetLayout(walk.NewVBoxLayout())
+	applyDarkSurface(header, uiCanvasBrush)
+	if cv.title, err = walk.NewLabel(header); err != nil {
+		return nil, err
+	}
+	cv.title.SetText(l18n.Sprintf("Select a connection"))
+	cv.title.SetTextColor(uiTextColor)
+	if titleFont, fontErr := walk.NewFont("Segoe UI Semibold", 20, 0); fontErr == nil {
+		cv.title.SetFont(titleFont)
+		disposables.Add(titleFont)
+	}
+	if cv.state, err = walk.NewLabel(header); err != nil {
+		return nil, err
+	}
+	cv.state.SetText(l18n.Sprintf("Choose a tunnel from Connections to view its details."))
+	applyMutedText(cv.state)
+
+	summaryRow, err := walk.NewComposite(cv)
+	if err != nil {
+		return nil, err
+	}
+	summaryLayout := walk.NewHBoxLayout()
+	summaryLayout.SetMargins(walk.Margins{})
+	summaryLayout.SetSpacing(10)
+	summaryRow.SetLayout(summaryLayout)
+	applyDarkSurface(summaryRow, uiCanvasBrush)
+	for _, heading := range []string{"Network", "DNS", "Endpoint", "Latest Handshake"} {
+		card, cardErr := newSummaryCard(summaryRow, l18n.Sprintf(heading))
+		if cardErr != nil {
+			return nil, cardErr
+		}
+		cv.summaries = append(cv.summaries, card)
+	}
 	if cv.name, err = newPaddedGroupGrid(cv); err != nil {
 		return nil, err
 	}
@@ -687,7 +767,52 @@ func (cv *ConfView) setTunnel(tunnel *manager.Tunnel, config *conf.Config, state
 		return
 	}
 
-	title := l18n.Sprintf("Interface: %s", config.Name)
+	if tunnel == nil {
+		cv.title.SetText(l18n.Sprintf("Select a connection"))
+		cv.state.SetText(l18n.Sprintf("Choose a tunnel from Connections to view its details."))
+		applyMutedText(cv.state)
+		for _, summary := range cv.summaries {
+			summary.value.SetText("—")
+		}
+	} else {
+		cv.title.SetText(config.Name)
+		if state == manager.TunnelStarted {
+			cv.state.SetText(l18n.Sprintf("Connected"))
+			cv.state.SetTextColor(uiHealthyColor)
+		} else {
+			cv.state.SetText(textForState(state, false))
+			applyMutedText(cv.state)
+		}
+		addresses := l18n.Sprintf("No address")
+		if len(config.Interface.Addresses) > 0 {
+			values := make([]string, len(config.Interface.Addresses))
+			for i, address := range config.Interface.Addresses {
+				values[i] = address.String()
+			}
+			addresses = strings.Join(values, l18n.EnumerationSeparator())
+		}
+		dns := l18n.Sprintf("Not configured")
+		if len(config.Interface.DNSOverHTTPS) > 0 {
+			dns = l18n.Sprintf("Encrypted DNS (DoH)")
+		} else if len(config.Interface.DNS) > 0 {
+			dns = l18n.Sprintf("Plain DNS")
+		}
+		endpoint := l18n.Sprintf("Not configured")
+		handshake := l18n.Sprintf("No handshake yet")
+		if len(config.Peers) > 0 {
+			if !config.Peers[0].Endpoint.IsEmpty() {
+				endpoint = config.Peers[0].Endpoint.String()
+			}
+			if !config.Peers[0].LastHandshakeTime.IsEmpty() {
+				handshake = config.Peers[0].LastHandshakeTime.String()
+			}
+		}
+		for i, value := range []string{addresses, dns, endpoint, handshake} {
+			cv.summaries[i].value.SetText(value)
+		}
+	}
+
+	title := l18n.Sprintf("Connection")
 	if cv.name.Title() != title {
 		cv.SetSuspended(true)
 		defer cv.SetSuspended(false)

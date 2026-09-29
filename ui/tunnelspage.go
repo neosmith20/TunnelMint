@@ -49,12 +49,27 @@ func NewTunnelsPage() (*TunnelsPage, error) {
 
 	tp.SetTitle(l18n.Sprintf("Tunnels"))
 	tp.SetLayout(walk.NewHBoxLayout())
+	applyDarkSurface(tp, uiCanvasBrush)
 
 	tp.listContainer, _ = walk.NewComposite(tp)
 	vlayout := walk.NewVBoxLayout()
 	vlayout.SetMargins(walk.Margins{})
 	vlayout.SetSpacing(0)
 	tp.listContainer.SetLayout(vlayout)
+	applyDarkSurface(tp.listContainer.(*walk.Composite), uiRailBrush)
+	tp.listContainer.SetMinMaxSize(walk.Size{250, 0}, walk.Size{250, 0})
+
+	railTitle, err := walk.NewLabel(tp.listContainer)
+	if err != nil {
+		return nil, err
+	}
+	railTitle.SetText(l18n.Sprintf("Connections"))
+	railTitle.SetTextColor(uiTextColor)
+	railTitleFont, fontErr := walk.NewFont("Segoe UI Semibold", 14, 0)
+	if fontErr == nil {
+		railTitle.SetFont(railTitleFont)
+		disposables.Add(railTitleFont)
+	}
 
 	if tp.listView, err = NewListView(tp.listContainer); err != nil {
 		return nil, err
@@ -66,6 +81,7 @@ func NewTunnelsPage() (*TunnelsPage, error) {
 	vlayout = walk.NewVBoxLayout()
 	vlayout.SetMargins(walk.Margins{})
 	tp.currentTunnelContainer.SetLayout(vlayout)
+	applyDarkSurface(tp.currentTunnelContainer, uiCanvasBrush)
 
 	if tp.fillerContainer, err = walk.NewComposite(tp); err != nil {
 		return nil, err

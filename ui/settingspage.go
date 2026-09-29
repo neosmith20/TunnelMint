@@ -41,8 +41,10 @@ func NewSettingsPage() (*SettingsPage, error) {
 	disposables.Add(page)
 	page.SetTitle(l18n.Sprintf("Settings"))
 	layout := walk.NewVBoxLayout()
-	layout.SetMargins(walk.Margins{10, 10, 10, 10})
+	layout.SetMargins(walk.Margins{18, 18, 18, 18})
+	layout.SetSpacing(10)
 	page.SetLayout(layout)
+	applyDarkSurface(page, uiCanvasBrush)
 
 	intro, err := walk.NewTextLabel(page)
 	if err != nil {
@@ -50,11 +52,14 @@ func NewSettingsPage() (*SettingsPage, error) {
 	}
 	intro.SetText(l18n.Sprintf("Bootstrap DNS resolvers are used only to locate a configured DNS-over-HTTPS endpoint. Changes apply when the next tunnel connects."))
 	intro.SetTextAlignment(walk.AlignHNearVCenter)
+	intro.SetTextColor(uiTextColor)
 
 	page.model = &bootstrapSettingsModel{entries: page.settings.Entries}
 	if page.list, err = walk.NewListBox(page); err != nil {
 		return nil, err
 	}
+	applyDarkWindow(page.list.Handle())
+	page.list.SetBackground(uiCardBrush)
 	if err := page.list.SetModel(page.model); err != nil {
 		return nil, err
 	}
@@ -83,6 +88,7 @@ func NewSettingsPage() (*SettingsPage, error) {
 			return nil, err
 		}
 		button.SetText(item.text)
+		button.SetBackground(uiCardBrush)
 		button.Clicked().Attach(item.fn)
 	}
 
@@ -91,6 +97,7 @@ func NewSettingsPage() (*SettingsPage, error) {
 		return nil, err
 	}
 	page.status.SetText("")
+	applyMutedText(page.status)
 	page.updateButtons()
 	disposables.Spare()
 	return page, nil
@@ -210,18 +217,23 @@ func runBootstrapResolverDialog(owner walk.Form) (string, bool) {
 	}
 	defer dialog.Dispose()
 	dialog.SetTitle(l18n.Sprintf("Add Bootstrap Resolver"))
+	applyDarkWindow(dialog.Handle())
+	dialog.SetBackground(uiCanvasBrush)
 	layout := walk.NewGridLayout()
 	layout.SetMargins(walk.Margins{10, 10, 10, 10})
 	layout.SetSpacing(6)
 	dialog.SetLayout(layout)
 	label, _ := walk.NewTextLabel(dialog)
 	label.SetText(l18n.Sprintf("IP Address:"))
+	label.SetTextColor(uiTextColor)
 	layout.SetRange(label, walk.Rectangle{0, 0, 1, 1})
 	edit, err := walk.NewLineEdit(dialog)
 	if err != nil {
 		return "", false
 	}
 	edit.SetCueBanner(l18n.Sprintf("Example: 9.9.9.9 or 2001:4860:4860::8888"))
+	edit.SetBackground(uiCardBrush)
+	edit.SetTextColor(uiTextColor)
 	layout.SetRange(edit, walk.Rectangle{1, 0, 2, 1})
 	buttons, _ := walk.NewComposite(dialog)
 	buttons.SetLayout(walk.NewHBoxLayout())

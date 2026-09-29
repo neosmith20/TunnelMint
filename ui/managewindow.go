@@ -73,8 +73,10 @@ func NewManageTunnelsWindow() (*ManageTunnelsWindow, error) {
 	}
 	mtw.SetTitle(product.ManagerWindowTitle)
 	mtw.SetFont(font)
-	mtw.SetSize(walk.Size{675, 525})
-	mtw.SetMinMaxSize(walk.Size{500, 400}, walk.Size{0, 0})
+	mtw.SetSize(walk.Size{1120, 720})
+	mtw.SetMinMaxSize(walk.Size{900, 600}, walk.Size{0, 0})
+	applyDarkWindow(mtw.Handle())
+	mtw.SetBackground(uiCanvasBrush)
 	vlayout := walk.NewVBoxLayout()
 	vlayout.SetMargins(walk.Margins{5, 5, 5, 5})
 	vlayout.SetSpacing(0)
@@ -155,6 +157,7 @@ func addProductHeader(parent walk.Container, disposables *walk.Disposables) erro
 	headerLayout.SetMargins(walk.Margins{14, 12, 14, 10})
 	header.SetLayout(headerLayout)
 	header.SetMinMaxSize(walk.Size{0, 62}, walk.Size{0, 62})
+	applyDarkSurface(header, uiHeaderBrush)
 
 	icon, err := loadLogoIcon(40)
 	if err == nil {
@@ -182,6 +185,7 @@ func addProductHeader(parent walk.Container, disposables *walk.Disposables) erro
 		return err
 	}
 	title.SetText(l18n.Sprintf("WireHush"))
+	title.SetTextColor(uiTextColor)
 	titleFont, err := walk.NewFont("Segoe UI Semibold", 13, 0)
 	if err == nil {
 		title.SetFont(titleFont)
@@ -192,6 +196,7 @@ func addProductHeader(parent walk.Container, disposables *walk.Disposables) erro
 		return err
 	}
 	subtitle.SetText(l18n.Sprintf("Private network control"))
+	applyMutedText(subtitle)
 
 	accent, err := walk.NewComposite(parent)
 	if err != nil {

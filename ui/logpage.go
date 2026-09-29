@@ -44,11 +44,14 @@ func NewLogPage() (*LogPage, error) {
 
 	lp.SetTitle(l18n.Sprintf("Log"))
 	lp.SetLayout(walk.NewVBoxLayout())
+	applyDarkSurface(lp, uiCanvasBrush)
 
 	if lp.logView, err = walk.NewTableView(lp); err != nil {
 		return nil, err
 	}
 	lp.logView.SetAlternatingRowBG(true)
+	applyDarkWindow(lp.logView.Handle())
+	lp.logView.SetBackground(uiCardBrush)
 	lp.logView.SetLastColumnStretched(true)
 	lp.logView.SetGridlines(true)
 

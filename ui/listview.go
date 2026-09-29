@@ -68,6 +68,8 @@ func NewListView(parent walk.Container) (*ListView, error) {
 	disposables.Add(tv)
 
 	tv.SetDoubleBuffering(true)
+	applyDarkWindow(tv.Handle())
+	tv.SetBackground(uiRailBrush)
 
 	model := new(ListModel)
 	model.lastObservedState = make(map[manager.Tunnel]manager.TunnelState)
