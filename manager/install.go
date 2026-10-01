@@ -36,6 +36,15 @@ func serviceManager() (*mgr.Mgr, error) {
 
 var ErrManagerAlreadyRunning = errors.New("Manager already installed and running")
 
+func managerServiceConfig() mgr.Config {
+	return mgr.Config{
+		ServiceType:  windows.SERVICE_WIN32_OWN_PROCESS,
+		StartType:    mgr.StartManual,
+		ErrorControl: mgr.ErrorNormal,
+		DisplayName:  product.ManagerServiceDisplayName,
+	}
+}
+
 func InstallManager() error {
 	m, err := serviceManager()
 	if err != nil {
@@ -84,12 +93,7 @@ func InstallManager() error {
 		}
 	}
 
-	config := mgr.Config{
-		ServiceType:  windows.SERVICE_WIN32_OWN_PROCESS,
-		StartType:    mgr.StartAutomatic,
-		ErrorControl: mgr.ErrorNormal,
-		DisplayName:  product.ManagerServiceDisplayName,
-	}
+	config := managerServiceConfig()
 
 	service, err = m.CreateService(serviceName, path, config, "/managerservice")
 	if err != nil {
