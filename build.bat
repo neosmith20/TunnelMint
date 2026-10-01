@@ -35,14 +35,12 @@ if exist .deps\prepared goto :render
 	set WIREGUARD_VERSION=%WIREGUARD_VERSION:"=%
 	for /f "tokens=1-4" %%a in ("%WIREGUARD_VERSION:.= % 0 0 0") do set WIREGUARD_VERSION_ARRAY=%%a,%%b,%%c,%%d
 	set GOOS=windows
-	set GOARM=7
 	set GOPATH=%BUILDDIR%.deps\gopath
 	set GOROOT=%BUILDDIR%.deps\go
 	if "%GoGenerate%"=="yes" (
 		echo [+] Regenerating files
 		go generate ./... || exit /b 1
 	)
-	call :build_plat x86 i686 386 || goto :error
 	call :build_plat amd64 x86_64 amd64 || goto :error
 	call :build_plat arm64 aarch64 arm64 || goto :error
 
@@ -51,7 +49,7 @@ if exist .deps\prepared goto :render
 	if "%SigningProvider%"=="" goto :success
 	if "%TimestampServer%"=="" goto :success
 	echo [+] Signing
-	signtool sign %SigningProvider% /fd sha256 /tr "%TimestampServer%" /td sha256 /d WireHush x86\wirehush.exe x86\wg.exe amd64\wirehush.exe amd64\wg.exe arm64\wirehush.exe arm64\wg.exe || goto :error
+	signtool sign %SigningProvider% /fd sha256 /tr "%TimestampServer%" /td sha256 /d WireHush amd64\wirehush.exe amd64\wg.exe arm64\wirehush.exe arm64\wg.exe || goto :error
 
 :success
 	echo [+] Success. Launch WireHush (wirehush.exe).
